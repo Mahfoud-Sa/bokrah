@@ -18,11 +18,9 @@ jobs:
         with:
           channel: stable
 
-      # This action reliably installs Inno Setup and adds it to the PATH
-      - name: Set up Inno Setup
-        uses: crazy-max/ghaction-inno-setup@v3
-        with:
-          version: "6.2.2"
+      # Use Chocolatey to install Inno Setup
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
 
       - name: Install dependencies
         run: flutter pub get
@@ -36,17 +34,16 @@ jobs:
       - name: Create installer
         run: |
           $issFile = Get-ChildItem -Path . -Filter "*.iss" -Recurse | Select-Object -First 1
-          if ($null -eq $issFile ) {
+          if ($null -eq $issFile) {
             Write-Error "No Inno Setup script (.iss file) found in the repository"
             exit 1
           }
-          # ISCC is now in the PATH, so you can call it directly
-          iscc $issFile.FullName
+          # The default install path for Inno Setup's compiler
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" $issFile.FullName
 
       - name: Find installer
         id: find-installer
         run: |
-          # Assumes the installer is created in a 'dist' or similar folder specified in your .iss script
           $installer = Get-ChildItem -Path . -Filter "*.exe" -Recurse | Where-Object { $_.Name -like "*Setup*.exe" } | Select-Object -First 1
           if ($null -eq $installer) {
             Write-Error "No installer file found"
