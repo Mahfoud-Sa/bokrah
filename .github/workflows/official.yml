@@ -6,6 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Add this section to grant the necessary permissions
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -26,7 +30,7 @@ jobs:
           # Download the official Inno Setup installer
           Invoke-WebRequest -Uri "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe" -OutFile "innosetup_installer.exe"
           
-          # Run the installer silently with ALL components (including languages )
+          # Run the installer silently with ALL components (including languages  )
           # The /ALLCOMPONENTS flag is crucial here.
           $p = Start-Process -FilePath ".\innosetup_installer.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/ALLCOMPONENTS" -Wait -PassThru
           
