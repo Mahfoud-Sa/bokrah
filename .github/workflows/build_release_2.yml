@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: windows-latest
@@ -18,9 +19,9 @@ jobs:
         with:
           channel: stable
 
-      # Use Chocolatey to install Inno Setup
-      - name: Install Inno Setup
-        run: choco install innosetup --no-progress -y
+      # Install the FULL version of Inno Setup to include language files
+      - name: Install Inno Setup with Languages
+        run: choco install innosetup --params="'/Full'" --no-progress -y
 
       - name: Install dependencies
         run: flutter pub get
