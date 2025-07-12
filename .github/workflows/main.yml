@@ -1,0 +1,51 @@
+# .github/workflows/flutter-windows-installer.yml
+
+name: Build Flutter Windows Installer
+
+on:
+  push:
+    tags:
+      - 'v*'  # Run when you push a tag like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    # Step 1: Checkout your Flutter project
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Install Flutter
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.6'  # or the version your project uses
+        channel: 'stable'
+
+    # Step 3: Enable desktop support (optional, only needed once)
+    - name: Enable Windows support
+      run: flutter config --enable-windows-desktop
+
+    # Step 4: Get dependencies
+    - name: Install dependencies
+      run: flutter pub get
+
+    # Step 5: Build the Windows executable
+    - name: Build Flutter for Windows
+      run: flutter build windows
+
+    # Step 6: Install Inno Setup AFTER build
+    - name: Install Inno Setup
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.0
+
+    # Step 7: Compile the installer using your .iss script
+    - name: Create Installer with Inno Setup
+      run: iscc installer/setup.iss
+
+    # Step 8: Upload the installer .exe as an artifact
+    - name: Upload Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlutterWindowsInstaller
+        path: path/to/output/MyInstaller.exe  # update this path
