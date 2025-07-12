@@ -1,4 +1,4 @@
-name: official Flutter Windows Release
+name: Flutter Windows Release
 
 on:
   push:
