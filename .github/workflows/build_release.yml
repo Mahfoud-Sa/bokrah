@@ -3,8 +3,8 @@ name: Flutter Windows Release
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags like v1.0.0
-
+      - 'v*'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: windows-latest
