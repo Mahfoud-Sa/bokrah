@@ -1,40 +1,36 @@
-; -- Bokrah Installer Script --
-; Generated for Flutter Windows build
-
-#define MyAppName "Bokrah"
-#define MyAppVersion "1.0"
-#define MyAppPublisher "Your Company"
-#define MyAppURL "https://yourwebsite.com/"
+; Final Corrected Inno Setup Script
+#define MyAppName "bokrah"
+#define MyAppVersion "1.5"
+#define MyAppPublisher "mahfoud bin sabbah"
 #define MyAppExeName "bokrah.exe"
-#define BuildDir "C:\Users\Mahfoud_Sa\Documents\bokrah\build\windows\x64\runner\Release"
 
 [Setup]
-AppId=12345678-1234-1234-1234-123456789ABC
+AppId={{22387F73-0320-456F-BF0F-60328E630801}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
+UninstallDisplayIcon={app}\{#MyAppExeName}
+ChangesAssociations=yes
 DisableProgramGroupPage=yes
-; Remove the following line to run in administrative install mode
-PrivilegesRequired=lowest
-OutputDir=userdocs:\Bokrah Installers
-OutputBaseFilename=BokrahSetup-{#MyAppVersion}
-Compression=lzma
+OutputBaseFilename=bokrah-setup-{#MyAppVersion}
 SolidCompression=yes
 WizardStyle=modern
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#BuildDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#BuildDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; --- THIS IS THE KEY FIX ---
+; This relative path works on any computer.
+; ".." means "go up one directory" from where the script is (the 'dist' folder).
+Source: "..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
