@@ -1,71 +1,51 @@
-name: Flutter Windows Release
+# .github/workflows/flutter-windows-installer.yml
+
+name: Build Flutter Windows Installer
 
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags like v1.0.0
+      - 'v*'  # Run when you push a tag like v1.0.0
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    # Step 1: Checkout your Flutter project
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
+    # Step 2: Install Flutter
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.6'  # or the version your project uses
+        channel: 'stable'
 
-      - name: Install dependencies
-        run: flutter pub get
+    # Step 3: Enable desktop support (optional, only needed once)
+    - name: Enable Windows support
+      run: flutter config --enable-windows-desktop
 
-      - name: Verify Flutter installation
-        run: flutter doctor -v
+    # Step 4: Get dependencies
+    - name: Install dependencies
+      run: flutter pub get
 
-      - name: Build Flutter Windows
-        run: flutter build windows --release
+    # Step 5: Build the Windows executable
+    - name: Build Flutter for Windows
+      run: flutter build windows
 
-      - name: Download Inno Setup
-        run: |
-          Invoke-WebRequest -Uri "https://files.jrsoftware.org/is/6/innosetup-6.2.2.exe" -OutFile "innosetup.exe"
-          Start-Process -Wait -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-          Remove-Item "innosetup.exe"
+    # Step 6: Install Inno Setup AFTER build
+    - name: Install Inno Setup
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.0
 
-      - name: Create installer
-        run: |
-          $issFile = Get-ChildItem -Path . -Filter "*.iss" -Recurse | Select-Object -First 1
-          if ($null -eq $issFile) {
-            Write-Error "No Inno Setup script (.iss file) found in the repository"
-            exit 1
-          }
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" $issFile.FullName
+    # Step 7: Compile the installer using your .iss script
+    - name: Create Installer with Inno Setup
+      run: iscc installer/setup.iss
 
-      - name: Find installer
-        id: find-installer
-        run: |
-          $installer = Get-ChildItem -Path . -Filter "*.exe" -Recurse | Where-Object { $_.Name -like "*Setup*.exe" } | Select-Object -First 1
-          if ($null -eq $installer) {
-            Write-Error "No installer file found"
-            exit 1
-          }
-          echo "installer_path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
-          echo "installer_name=$($installer.Name)" >> $env:GITHUB_OUTPUT
-
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-installer
-          path: ${{ steps.find-installer.outputs.installer_path }}
-
-      - name: Create GitHub release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: "Flutter Windows Desktop Release"
-          files: ${{ steps.find-installer.outputs.installer_path }}
-          draft: false
-          prerelease: false
+    # Step 8: Upload the installer .exe as an artifact
+    - name: Upload Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlutterWindowsInstaller
+        path: path/to/output/MyInstaller.exe  # update this path
