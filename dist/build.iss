@@ -5,7 +5,7 @@
 #define MyAppExeName "bokrah.exe"
 
 [Setup]
-AppId={22387F73-0320-456F-BF0F-60328E630801}
+AppId=22387F73-0320-456F-BF0F-60328E630801
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
