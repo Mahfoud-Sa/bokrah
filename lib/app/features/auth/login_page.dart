@@ -1,4 +1,6 @@
+import 'package:bokrah/app/features/items/presentation/pages/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,6 +38,16 @@ class _LoginPageState extends State<LoginPage> {
         context,
       ).showSnackBar(const SnackBar(content: Text('Login successful!')));
     }
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return SystemHomePage(
+            packageInfo: packageInfo,
+          ); // AppUpdateScreen(packageInfo: packageInfo),
+        },
+      ),
+    );
   }
 
   @override
