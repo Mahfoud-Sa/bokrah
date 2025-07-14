@@ -1,4 +1,4 @@
-import 'package:bokrah/app/features/items/presentation/pages/home_page.dart';
+import 'package:bokrah/app/features/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo and Title
-                  const FlutterLogo(size: 80),
+                  //const FlutterLogo(size: 80),
                   const SizedBox(height: 24),
                   Text(
                     'Accounting System',

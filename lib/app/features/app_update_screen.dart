@@ -1,3 +1,4 @@
+import 'package:bokrah/github_releses.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,6 +16,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   late Future<Map<String, dynamic>?> _releaseFuture;
   bool _isUpdateAvailable = false;
   String? _downloadUrl;
+  String? _releaseNotesUrl;
 
   @override
   void initState() {
@@ -30,10 +32,11 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
 
   Future<Map<String, dynamic>?> _getLatestRelease() async {
     try {
-      // Replace with your actual GitHub API call
-      // final releases = await GitHubApiService.listReleases('Mahfoud-Sa', 'bokrah');
-      final List<Map<String, dynamic>> releases =
-          []; // Mock data - replace with real API call
+      // Call GitHub API to get releases
+      final releases = await GitHubApiService.listReleases(
+        'Mahfoud-Sa',
+        'bokrah',
+      );
 
       if (releases.isEmpty) return null;
 
@@ -43,13 +46,14 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
       // Compare versions
       final currentVersion = _parseVersion(widget.packageInfo.version);
       final latestVersion = _parseVersion(
-        latestRelease['tag_name']?.replaceFirst('v', '') ?? '0.0.0',
+        latestRelease['tag_name']?.toString().replaceFirst('v', '') ?? '0.0.0',
       );
 
       setState(() {
         _isUpdateAvailable =
             _compareVersions(currentVersion, latestVersion) < 0;
         _downloadUrl = _findInstallerUrl(latestRelease['assets']);
+        _releaseNotesUrl = latestRelease['html_url'];
       });
 
       return latestRelease;
@@ -83,7 +87,12 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
 
   Future<void> _launchDownload(String url) async {
     if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      await launchUrl(
+        Uri.parse(
+          "https://github.com/Mahfoud-Sa/bokrah/releases/download/main/bokrah-setup-1.5.exe",
+        ),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -188,40 +197,43 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              release['name'] ?? 'No Name',
+              release['name']?.toString() ?? 'No Name',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text('Version: ${release['tag_name']}'),
             Text(
-              'Published: ${release['published_at']?.split('T').first ?? 'Unknown'}',
+              'Published: ${release['published_at']?.toString().split('T').first ?? 'Unknown'}',
             ),
-            if (release['body'] != null && release['body'].isNotEmpty) ...[
+            if (release['body'] != null &&
+                release['body'].toString().isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text(release['body']),
+              Text(release['body'].toString()),
             ],
-            if (_isUpdateAvailable && _downloadUrl != null) ...[
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text('Download Update'),
-                  onPressed: () => _launchDownload(_downloadUrl!),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.download),
+                label: const Text('Download Update'),
+                onPressed: () => _launchDownload(_downloadUrl!),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
-              const SizedBox(height: 8),
+            ),
+            const SizedBox(height: 8),
+
+            if (_releaseNotesUrl != null)
               OutlinedButton.icon(
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('View Release Notes'),
-                onPressed: () => _launchDownload(release['html_url'] ?? ''),
+                onPressed: () => _launchDownload(_releaseNotesUrl!),
               ),
-            ],
           ],
         ),
       ),
