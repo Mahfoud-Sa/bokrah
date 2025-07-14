@@ -2,7 +2,7 @@ import 'package:bokrah/app/features/barcoders/presentation/pages/addBarcoder.dar
 import 'package:bokrah/app/features/barcoders/presentation/pages/barcoders_page.dart';
 import 'package:bokrah/app/features/invoices/presentation/pages/view_page.dart';
 import 'package:bokrah/app/features/items/presentation/pages/home_page.dart';
-import 'package:bokrah/app/features/salles/presentation/pages/package_info.dart';
+import 'package:bokrah/app/features/salles/presentation/pages/app_update_screen.dart';
 import 'package:bokrah/app/core/services/app_database_service.dart';
 import 'package:bokrah/app/initialzation_dependencies.dart';
 import 'package:flutter/material.dart';

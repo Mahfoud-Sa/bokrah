@@ -1,6 +1,6 @@
-import 'package:bokrah/github_releses.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AppUpdateScreen extends StatefulWidget {
   final PackageInfo packageInfo;
@@ -30,10 +30,11 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
 
   Future<Map<String, dynamic>?> _getLatestRelease() async {
     try {
-      final releases = await GitHubApiService.listReleases(
-        'Mahfoud-Sa',
-        'bokrah',
-      );
+      // Replace with your actual GitHub API call
+      // final releases = await GitHubApiService.listReleases('Mahfoud-Sa', 'bokrah');
+      final List<Map<String, dynamic>> releases =
+          []; // Mock data - replace with real API call
+
       if (releases.isEmpty) return null;
 
       // Get the latest release (first one in the list)
@@ -57,12 +58,10 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     }
   }
 
-  // Parse version string into comparable numbers
   List<int> _parseVersion(String version) {
     return version.split('.').map((e) => int.tryParse(e) ?? 0).toList();
   }
 
-  // Compare version numbers (returns -1 if current < latest)
   int _compareVersions(List<int> current, List<int> latest) {
     for (int i = 0; i < current.length; i++) {
       if (i >= latest.length) return 0;
@@ -72,24 +71,27 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     return 0;
   }
 
-  // Find the Windows installer URL in release assets
-  String? _findInstallerUrl(List<dynamic> assets) {
+  String? _findInstallerUrl(List<dynamic>? assets) {
     if (assets == null) return null;
     for (final asset in assets) {
-      if (asset['name'].toString().endsWith('.exe')) {
+      if (asset['name'].toString().toLowerCase().endsWith('.exe')) {
         return asset['browser_download_url'];
       }
     }
     return null;
   }
 
-  // Future<void> _launchDownload(String url) async {
-  //   if (await canLaunchUrl(Uri.parse(url))) {
-  //     await launchUrl(Uri.parse(url));
-  //   } else {
-  //     throw 'Could not launch $url';
-  //   }
-  // }
+  Future<void> _launchDownload(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch download URL: $url')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +176,9 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isUpdateAvailable ? 'Update Available!' : 'Youre up to date',
+                  _isUpdateAvailable
+                      ? 'Update Available!'
+                      : 'You\'re up to date',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: _isUpdateAvailable ? Colors.blue : Colors.green,
@@ -203,10 +207,19 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.download),
                   label: const Text('Download Update'),
-                  onPressed: () {
-                    //  _launchDownload(_downloadUrl!)
-                  },
+                  onPressed: () => _launchDownload(_downloadUrl!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
                 ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('View Release Notes'),
+                onPressed: () => _launchDownload(release['html_url'] ?? ''),
               ),
             ],
           ],

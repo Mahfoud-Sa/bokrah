@@ -1,4 +1,4 @@
-import 'package:bokrah/app/features/salles/presentation/pages/package_info.dart';
+import 'package:bokrah/app/features/salles/presentation/pages/app_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
