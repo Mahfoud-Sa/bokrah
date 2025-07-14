@@ -1,4 +1,4 @@
-import 'package:bokrah/app/features/salles/presentation/pages/app_update_screen.dart';
+import 'package:bokrah/app/features/app_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -93,21 +93,18 @@ class _SystemHomePageState extends State<SystemHomePage> {
                           child: Icon(Icons.memory, color: Colors.white),
                         ),
                 ),
-                Divider(
-                  color: Colors.white.withOpacity(0.3),
-
-                  // Sidebar Menu Items
-                  // Expanded(
-                  //   child: ListView(
-                  //     children: [
-                  //       _buildSidebarItem(Icons.dashboard, 'Dashboard', 0),
-                  //       _buildSidebarItem(Icons.people, 'Users', 1),
-                  //       _buildSidebarItem(Icons.devices, 'Devices', 2),
-                  //       _buildSidebarItem(Icons.settings, 'Settings', 3),
-                  //       _buildSidebarItem(Icons.help, 'Help', 4),
-                  //     ],
-                  //   ),
-                  // ),
+                Divider(color: Colors.white.withOpacity(0.3)),
+                // Sidebar Menu Items
+                Expanded(
+                  child: ListView(
+                    children: [
+                      _buildSidebarItem(Icons.dashboard, 'Dashboard', 0),
+                      _buildSidebarItem(Icons.people, 'Users', 1),
+                      _buildSidebarItem(Icons.devices, 'Devices', 2),
+                      _buildSidebarItem(Icons.settings, 'Settings', 3),
+                      _buildSidebarItem(Icons.help, 'Help', 4),
+                    ],
+                  ),
                 ),
                 // Sidebar Footer
                 Divider(color: Colors.white.withOpacity(0.3)),
