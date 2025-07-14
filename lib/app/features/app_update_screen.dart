@@ -89,7 +89,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(
         Uri.parse(
-          "https://github.com/Mahfoud-Sa/bokrah/releases/download/main/bokrah-setup-1.5.exe",
+          "https://github.com/Mahfoud-Sa/bokrah/releases/download/main/bokrah-setup-2.2.exe",
         ),
         mode: LaunchMode.externalApplication,
       );
