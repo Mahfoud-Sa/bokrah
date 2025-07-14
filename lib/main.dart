@@ -1,3 +1,4 @@
+import 'package:bokrah/app/features/auth/login_page.dart';
 import 'package:bokrah/app/features/barcoders/presentation/pages/addBarcoder.dart';
 import 'package:bokrah/app/features/barcoders/presentation/pages/barcoders_page.dart';
 import 'package:bokrah/app/features/invoices/presentation/pages/view_page.dart';
@@ -91,9 +92,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: SystemHomePage(
-        packageInfo: packageInfo,
-      ), // AppUpdateScreen(packageInfo: packageInfo),
+      home: LoginPage(),
+
+      //     SystemHomePage(
+      //     packageInfo: packageInfo,
+      //    ), // AppUpdateScreen(packageInfo: packageInfo),
     );
   }
 }
