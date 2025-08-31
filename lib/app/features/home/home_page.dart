@@ -114,7 +114,7 @@ class _SystemHomePageState extends State<SystemHomePage> {
                       ? Text('Logout', style: TextStyle(color: Colors.white))
                       : null,
                   onTap: () {
-                   context.go('/');
+                   //context.go('/');
                    Navigator.of(context).pop(context);
                   },
                 ),
