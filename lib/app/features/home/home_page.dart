@@ -1,7 +1,7 @@
-import 'package:bokrah/app/features/app_update_screen.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/app_update_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-
+import 'package:go_router/go_router.dart';
 class SystemHomePage extends StatefulWidget {
   final PackageInfo packageInfo;
   const SystemHomePage({super.key, required this.packageInfo});
@@ -114,7 +114,8 @@ class _SystemHomePageState extends State<SystemHomePage> {
                       ? Text('Logout', style: TextStyle(color: Colors.white))
                       : null,
                   onTap: () {
-                    // Logout logic
+                   context.go('/');
+                   Navigator.of(context).pop(context);
                   },
                 ),
               ],
