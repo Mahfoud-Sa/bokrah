@@ -1,6 +1,8 @@
 import 'package:bokrah/app/features/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -28,18 +30,31 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        // Prepare the API endpoint URL
+        final Uri url = Uri.parse(
+          'http://bokrah-api.runasp.net/api/Users/Login?email=${Uri.encodeComponent(_emailController.text)}&password=${Uri.encodeComponent(_passwordController.text)}',
+        );
 
-      setState(() => _isLoading = false);
+        // Make the GET request
+        final response = await http.get(
+          url,
+          headers: {
+            'accept': '*/*',
+          },
+        );
 
-      // In a real app, you would navigate to the home page after successful login
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login successful!')));
-    }
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    Navigator.of(context).push(
+        setState(() => _isLoading = false);
+
+        if (response.statusCode == 200) {
+          // Login successful
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login successful!')),
+          );
+
+          // Navigate to home page - using pushAndRemoveUntil to avoid page-based navigation issues
+          PackageInfo packageInfo = await PackageInfo.fromPlatform();
+          Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
           return SystemHomePage(
@@ -48,6 +63,30 @@ class _LoginPageState extends State<LoginPage> {
         },
       ),
     );
+        } else {
+          // Login failed
+          String errorMessage = 'Login failed';
+          try {
+            final responseData = json.decode(response.body);
+            if (responseData is Map<String, dynamic> && responseData.containsKey('message')) {
+              errorMessage = responseData['message'];
+            }
+          } catch (e) {
+            // If JSON parsing fails, use the response body as is
+            errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage)),
+          );
+        }
+      } catch (error) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Network error: ${error.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -66,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                   //const FlutterLogo(size: 80),
                   const SizedBox(height: 24),
                   Text(
-                    'Accounting System',
+                    'Bokrah System',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
