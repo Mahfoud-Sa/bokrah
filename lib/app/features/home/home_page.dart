@@ -1,4 +1,5 @@
 import 'package:bokrah/app/features/autoUpdate/presentation/app_update_screen.dart';
+import 'package:bokrah/app/features/home/main_content.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
@@ -409,6 +410,241 @@ class SystemFeature {
       title: title ?? this.title,
       description: description ?? this.description,
       enabled: enabled ?? this.enabled,
+    );
+  }
+}
+
+
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'FLOKK UI',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xFFF6FAF7),
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    DashboardPage(),
+    ContactsPage(),
+    NotificationsPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Row(
+        children: [
+          // Sidebar
+          Container(
+            width: 220,
+            color: const Color(0xFF2E7D64),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                const Text(
+                  "FLÖKK",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SidebarItem(
+                  icon: Icons.space_dashboard,
+                  label: "Dashboard",
+                  isSelected: selectedIndex == 0,
+                  onTap: () => setState(() => selectedIndex = 0),
+                ),
+                SidebarItem(
+                  icon: Icons.people,
+                  label: "Contacts",
+                  isSelected: selectedIndex == 1,
+                  onTap: () => setState(() => selectedIndex = 1),
+                ),
+                SidebarItem(
+                  icon: Icons.notifications,
+                  label: "Notifications",
+                  isSelected: selectedIndex == 2,
+                  onTap: () => setState(() => selectedIndex = 2),
+                ),
+              ],
+            ),
+          ),
+
+          // Main content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top bar
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedIndex == 0
+                            ? "Dashboard"
+                            : selectedIndex == 1
+                                ? "Contacts"
+                                : "Notifications",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      // Notification bell
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined,
+                                size: 28),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        "You have new system notifications.")),
+                              );
+                            },
+                          ),
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Dynamic page
+                Expanded(
+                  child: pages[selectedIndex],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Sidebar item
+class SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const SidebarItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: isSelected ? Colors.black26 : Colors.transparent,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Pages
+class DashboardPage extends StatelessWidget {
+  const DashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const DashboardContent(); // moved out
+  }
+}
+
+class ContactsPage extends StatelessWidget {
+  const ContactsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        "This is the Contacts Page",
+        style: TextStyle(fontSize: 18),
+      ),
+    );
+  }
+}
+
+class NotificationsPage extends StatelessWidget {
+  const NotificationsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        "This is the Notifications Page",
+        style: TextStyle(fontSize: 18),
+      ),
     );
   }
 }

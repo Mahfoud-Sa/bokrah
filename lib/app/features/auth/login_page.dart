@@ -27,66 +27,75 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
-      try {
-        // Prepare the API endpoint URL
-        final Uri url = Uri.parse(
-          'http://bokrah-api.runasp.net/api/Users/Login?email=${Uri.encodeComponent(_emailController.text)}&password=${Uri.encodeComponent(_passwordController.text)}',
-        );
-
-        // Make the GET request
-        final response = await http.get(
-          url,
-          headers: {
-            'accept': '*/*',
-          },
-        );
-
-        setState(() => _isLoading = false);
-
-        if (response.statusCode == 200) {
-          // Login successful
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login successful!')),
-          );
-
-          // Navigate to home page - using pushAndRemoveUntil to avoid page-based navigation issues
-          PackageInfo packageInfo = await PackageInfo.fromPlatform();
-          Navigator.of(context).push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
-          return SystemHomePage(
-            packageInfo: packageInfo,
+          return HomePage(
+       //     packageInfo: packageInfo,
           ); // AppUpdateScreen(packageInfo: packageInfo),
         },
       ),
     );
-        } else {
-          // Login failed
-          String errorMessage = 'Login failed';
-          try {
-            final responseData = json.decode(response.body);
-            if (responseData is Map<String, dynamic> && responseData.containsKey('message')) {
-              errorMessage = responseData['message'];
-            }
-          } catch (e) {
-            // If JSON parsing fails, use the response body as is
-            errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
-          }
+    // if (_formKey.currentState!.validate()) {
+    //   setState(() => _isLoading = true);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage)),
-          );
-        }
-      } catch (error) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Network error: ${error.toString()}')),
-        );
-      }
-    }
+    //   try {
+    //     // Prepare the API endpoint URL
+    //     final Uri url = Uri.parse(
+    //       'http://bokrah-api.runasp.net/api/Users/Login?email=${Uri.encodeComponent(_emailController.text)}&password=${Uri.encodeComponent(_passwordController.text)}',
+    //     );
+
+    //     // Make the GET request
+    //     final response = await http.get(
+    //       url,
+    //       headers: {
+    //         'accept': '*/*',
+    //       },
+    //     );
+
+    //     setState(() => _isLoading = false);
+
+    //     if (response.statusCode == 200) {
+    //       // Login successful
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(content: Text('Login successful!')),
+    //       );
+
+    //       // Navigate to home page - using pushAndRemoveUntil to avoid page-based navigation issues
+    //       PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    //       Navigator.of(context).push(
+    //   MaterialPageRoute(
+    //     builder: (context) {
+    //       return HomePage(
+    //    //     packageInfo: packageInfo,
+    //       ); // AppUpdateScreen(packageInfo: packageInfo),
+    //     },
+    //   ),
+    // );
+    //     } else {
+    //       // Login failed
+    //       String errorMessage = 'Login failed';
+    //       try {
+    //         final responseData = json.decode(response.body);
+    //         if (responseData is Map<String, dynamic> && responseData.containsKey('message')) {
+    //           errorMessage = responseData['message'];
+    //         }
+    //       } catch (e) {
+    //         // If JSON parsing fails, use the response body as is
+    //         errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+    //       }
+
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         SnackBar(content: Text(errorMessage)),
+    //       );
+    //     }
+    //   } catch (error) {
+    //     setState(() => _isLoading = false);
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       SnackBar(content: Text('Network error: ${error.toString()}')),
+    //     );
+    //   }
+    // }
   }
 
   @override
