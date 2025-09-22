@@ -10,7 +10,7 @@ class GitHubApiService {
       Uri.parse('https://api.github.com/repos/$owner/$repo/releases'),
       headers: {
         'Accept': 'application/vnd.github.v3+json',
-        "Authorization": "token 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",
+        
       },
     );
 
