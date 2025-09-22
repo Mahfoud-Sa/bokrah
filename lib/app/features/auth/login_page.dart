@@ -1,6 +1,6 @@
-
-  import 'package:bokrah/app/features/home/home_page.dart';
+import 'package:bokrah/app/features/home/home_page.dart';
 import 'package:flutter/material.dart';
+
 
 class LoginPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -8,117 +8,118 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          // Sidebar-like left section (brand look)
-          Container(
-            width: 250,
-            color: const Color(0xFF4CAF50), // green accent
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.people, color: Colors.white, size: 60),
-                SizedBox(height: 20),
-                Text(
-                  "FLOKK",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+    return Directionality(
+      textDirection: TextDirection.rtl, // 👈 اجعل الصفحة RTL
+      child: Scaffold(
+        body: Row(
+          children: [
+            // Main login content
+            Expanded(
+              child: Center(
+                child: Container(
+                  width: 400,
+                  padding: EdgeInsets.all(32),
+                  decoration: BoxDecoration(
                     color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 8,
+                        color: Colors.black12,
+                        offset: Offset(0, 4),
+                      )
+                    ],
                   ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  "Connect & Organize",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Main login content
-          Expanded(
-            child: Center(
-              child: Container(
-                width: 400,
-                padding: EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 8,
-                      color: Colors.black12,
-                      offset: Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Login to FLOKK",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    // Email field
-                    TextField(
-                      controller: emailController,
-                      decoration: InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "تسجيل الدخول إلى بكره",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
-                    ),
-                    SizedBox(height: 20),
+                      SizedBox(height: 20),
 
-                    // Password field
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: "Password",
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 30),
-
-                    // Login button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
+                      // Email field
+                      TextField(
+                        controller: emailController,
+                        decoration: InputDecoration(
+                          labelText: "الايميل",
+                          prefixIcon: Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          backgroundColor: const Color(0xFF4CAF50),
                         ),
-                        onPressed: () {
-                  Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return HomePage(
-                  //     packageInfo: packageInfo,
-                      ); // AppUpdateScreen(packageInfo: packageInfo),
-                    },
+                      ),
+                      SizedBox(height: 20),
+
+                      // Password field
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: "كلمة السر",
+                          prefixIcon: Icon(Icons.lock_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 30),
+
+                      // Login button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            backgroundColor: const Color(0xFF4CAF50),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return HomePage();
+                                },
+                              ),
+                            );
+                          },
+                          child: Text(
+                            "تسجيل الدخول",
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+
+                      // Forgot password
+                      TextButton(
+                        onPressed: () {},
+                        child: Text(
+                          "هل نسيت كلمة السر؟",
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-                // if (_formKey.currentState!.validate()) {
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// if (_formKey.currentState!.validate()) {
                 //   setState(() => _isLoading = true);
 
                 //   try {
@@ -178,29 +179,3 @@ class LoginPage extends StatelessWidget {
                 //     );
                 //   }
                 // }
-                        },
-                        child: Text(
-                          "Login",
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-
-                    // Forgot password
-                    TextButton(
-                      onPressed: () {},
-                      child: Text("Forgot password?",
-                          style: TextStyle(color: Colors.grey[600])),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-

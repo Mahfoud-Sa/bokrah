@@ -22,7 +22,7 @@ class AppRoutes {
               builder: (BuildContext, state) {
                 PackageInfo packageInfo = state.extra as PackageInfo;
                 String appName = packageInfo.appName; 
-                return SystemHomePage(packageInfo: packageInfo);
+                return HomePage();
               },
             ),
             // GoRoute(
