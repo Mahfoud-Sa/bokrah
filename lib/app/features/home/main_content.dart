@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DashboardContent extends StatelessWidget {
-   DashboardContent({super.key});
+  const DashboardContent({super.key});
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
@@ -57,13 +57,12 @@ class DashboardContent extends StatelessWidget {
                           Text(
                             "آخر المبيعات",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Divider(),
-                          Expanded(
-                            child: Text(
-                                "Example tweet activity goes here...\n(Multiple items in real use)."),
-                          )
+                          Expanded(child: Text("قريب")),
                         ],
                       ),
                     ),
@@ -84,13 +83,12 @@ class DashboardContent extends StatelessWidget {
                           Text(
                             "اخر القيود اليومية",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Divider(),
-                          Expanded(
-                            child: Text(
-                                "Example other activity goes here...\n(Multiple items in real use)."),
-                          )
+                          Expanded(child: Text("قريب")),
                         ],
                       ),
                     ),
@@ -114,11 +112,9 @@ class DashboardContent extends StatelessWidget {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children:  [
-                        
-                         Text("احمد باعطية",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(now.hour.toString() + ":" + now.minute.toString() + ":" + now.second.toString()),
+                      children: [
+                        Text("", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("${now.hour}:${now.minute}:${now.second}"),
                       ],
                     ),
                   ),
@@ -126,8 +122,7 @@ class DashboardContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text("",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("", style: TextStyle(fontWeight: FontWeight.bold)),
                         Text(""),
                       ],
                     ),
@@ -135,7 +130,7 @@ class DashboardContent extends StatelessWidget {
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );

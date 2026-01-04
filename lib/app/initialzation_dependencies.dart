@@ -1,4 +1,3 @@
-import 'package:bokrah/app/core/services/app_database_service.dart';
 import 'package:get_it/get_it.dart';
 
 final singelton = GetIt.instance;
