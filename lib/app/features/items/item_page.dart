@@ -15,7 +15,7 @@ class Item {
 }
 
 class ItemPage extends StatefulWidget {
-  const ItemPage({Key? key}) : super(key: key);
+  const ItemPage({super.key});
 
   @override
   State<ItemPage> createState() => _ItemPageState();
@@ -100,10 +100,12 @@ class _ItemPageState extends State<ItemPage> {
                       ),
                       decoration: const InputDecoration(labelText: 'السعر'),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty)
+                        if (v == null || v.trim().isEmpty) {
                           return 'الرجاء إدخال السعر';
-                        if (double.tryParse(v.trim()) == null)
+                        }
+                        if (double.tryParse(v.trim()) == null) {
                           return 'الرجاء إدخال رقم صالح';
+                        }
                         return null;
                       },
                     ),
@@ -157,7 +159,7 @@ class _ItemPageState extends State<ItemPage> {
                                     ),
                               title: Text(it.name),
                               subtitle: Text('ID: ${it.id}'),
-                              trailing: Text('${it.price.toStringAsFixed(2)}'),
+                              trailing: Text(it.price.toStringAsFixed(2)),
                             ),
                           );
                         },

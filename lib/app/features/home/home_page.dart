@@ -17,6 +17,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   PackageInfo? _packageInfo;
+  bool isItemsExpanded = false;
+  bool isSettingsExpanded = false;
 
   final List<Widget> pages = const [
     DashboardPage(),
@@ -132,8 +134,62 @@ class _HomePageState extends State<HomePage> {
             icon: Icons.inventory_2,
             label: "العناصر",
             isSelected: false,
-            onTap: () => context.go('/items'),
+            hasArrow: true,
+            isExpanded: isItemsExpanded,
+            onTap: () => setState(() => isItemsExpanded = !isItemsExpanded),
           ),
+          if (isItemsExpanded) ...[
+            SidebarItem(
+              icon: Icons.list_alt,
+              label: "قائمة العناصر",
+              isSelected: false,
+              onTap: () => context.go('/items'),
+            ),
+            SidebarItem(
+              icon: Icons.qr_code,
+              label: "الباركودات",
+              isSelected: false,
+              onTap: () => context.go('/barcodes'),
+            ),
+            SidebarItem(
+              icon: Icons.category,
+              label: "الفئات",
+              isSelected: false,
+              onTap: () => context.go('/categories'),
+            ),
+          ],
+          SidebarItem(
+            icon: Icons.warehouse,
+            label: "المستودعات",
+            isSelected: false,
+            onTap: () => context.go('/warehouses'),
+          ),
+          SidebarItem(
+            icon: Icons.settings,
+            label: "الإعدادات",
+            isSelected: false,
+            hasArrow: true,
+            isExpanded: isSettingsExpanded,
+            onTap: () {
+              setState(() {
+                isSettingsExpanded = !isSettingsExpanded;
+              });
+            },
+          ),
+          if (isSettingsExpanded) ...[
+            SidebarItem(
+              icon: Icons.manage_accounts,
+              label: "إدارة المستخدمين",
+              isSelected: false,
+              onTap: () => context.go('/users'),
+            ),
+            SidebarItem(
+              icon: Icons.person_outline,
+              label: "ملفي الشخصي",
+              isSelected: false,
+              onTap: () => context.go('/profile'),
+            ),
+          ],
         ],
       ),
     );
@@ -170,6 +226,10 @@ class _HomePageState extends State<HomePage> {
           // Actions (settings, logout, notifications)
           Row(
             children: [
+              IconButton(
+                icon: const Icon(Icons.person_outline, size: 28),
+                onPressed: () => context.go('/profile'),
+              ),
               IconButton(
                 icon: const Icon(Icons.settings, size: 26),
                 onPressed: () {
@@ -246,6 +306,10 @@ class _HomePageState extends State<HomePage> {
                   //   ),
                   // ),
                   IconButton(
+                    icon: const Icon(Icons.person_outline, size: 28),
+                    onPressed: () => context.go('/profile'),
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.logout, size: 26),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -283,50 +347,55 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 20,
-                            ),
-                            child: Row(
-                              children: const [
-                                CircleAvatar(
-                                  radius: 28,
-                                  backgroundColor: Colors.white24,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 30,
+                          InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.go('/profile');
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 20,
+                              ),
+                              child: Row(
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: Colors.white24,
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'عبدالله سالم بن زقر',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: const [
+                                        Text(
+                                          'عبدالله سالم بن زقر',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'مرحبا بك',
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 14,
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'مرحبا بك',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.close, color: Colors.white),
-                              ],
+                                  const SizedBox(width: 8),
+                                ],
+                              ),
                             ),
                           ),
                           const Divider(color: Colors.white24, height: 1),
@@ -394,14 +463,96 @@ class _HomePageState extends State<HomePage> {
                                     setState(() => selectedIndex = 2);
                                   },
                                 ),
+                                Theme(
+                                  data: Theme.of(
+                                    context,
+                                  ).copyWith(dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    leading: const Icon(
+                                      Icons.inventory_2,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                    title: const Text(
+                                      'العناصر',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    trailing: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.white70,
+                                    ),
+                                    childrenPadding: const EdgeInsets.only(
+                                      right: 20,
+                                    ),
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.list_alt,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'قائمة العناصر',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/items');
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.qr_code,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'الباركودات',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/barcodes');
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.category,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'الفئات',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/categories');
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 ListTile(
                                   leading: const Icon(
-                                    Icons.inventory_2,
+                                    Icons.warehouse,
                                     color: Colors.white,
                                     size: 28,
                                   ),
                                   title: const Text(
-                                    'العناصر',
+                                    'المستودعات',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -409,40 +560,74 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   onTap: () {
                                     Navigator.of(context).pop();
-                                    context.go('/items');
+                                    context.go('/warehouses');
                                   },
                                 ),
                                 const SizedBox(height: 8),
                                 const Divider(color: Colors.white24),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  child: Text(
-                                    'الإعدادات',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.settings,
-                                    color: Colors.white,
-                                    size: 26,
-                                  ),
-                                  title: const Text(
-                                    'الإعدادات',
-                                    style: TextStyle(
+                                Theme(
+                                  data: Theme.of(
+                                    context,
+                                  ).copyWith(dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    leading: const Icon(
+                                      Icons.settings,
                                       color: Colors.white,
-                                      fontSize: 16,
+                                      size: 28,
                                     ),
+                                    title: const Text(
+                                      'الإعدادات',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    trailing: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Colors.white70,
+                                    ),
+                                    childrenPadding: const EdgeInsets.only(
+                                      right: 20,
+                                    ),
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.manage_accounts,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'إدارة المستخدمين',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/users');
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.person_outline,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'ملفي الشخصي',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/profile');
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                  },
                                 ),
                               ],
                             ),

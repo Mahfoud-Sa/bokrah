@@ -6,6 +6,8 @@ class SidebarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool hasArrow;
+  final bool isExpanded;
 
   const SidebarItem({
     super.key,
@@ -13,6 +15,8 @@ class SidebarItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.hasArrow = false,
+    this.isExpanded = false,
   });
 
   @override
@@ -30,6 +34,16 @@ class SidebarItem extends StatelessWidget {
               label,
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
+            if (hasArrow) ...[
+              const Spacer(),
+              Icon(
+                isExpanded
+                    ? Icons.keyboard_arrow_up
+                    : Icons.keyboard_arrow_down,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ],
           ],
         ),
       ),

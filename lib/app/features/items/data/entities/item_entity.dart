@@ -6,6 +6,7 @@ class ItemEntity {
   final int quantity;
   final String? qrCode;
   final String? description;
+  final int? categoryId; // Added categoryId
   final DateTime createdAt;
 
   ItemEntity({
@@ -16,6 +17,7 @@ class ItemEntity {
     required this.quantity,
     this.qrCode,
     this.description,
+    this.categoryId,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -28,6 +30,7 @@ class ItemEntity {
       'quantity': quantity,
       'qrCode': qrCode,
       'description': description,
+      'categoryId': categoryId,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -44,6 +47,7 @@ class ItemEntity {
       quantity: map['quantity'],
       qrCode: map['qrCode'],
       description: map['description'],
+      categoryId: map['categoryId'],
       createdAt: DateTime.parse(map['createdAt']),
     );
   }

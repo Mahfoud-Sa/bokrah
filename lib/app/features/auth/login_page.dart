@@ -13,7 +13,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   late AnimationController _fadeController;
   late AnimationController _slideController;

@@ -1,10 +1,13 @@
+import 'package:bokrah/app/features/items/data/entities/category_entity.dart';
 import 'package:bokrah/app/features/items/data/entities/item_entity.dart';
+import 'package:bokrah/app/features/items/data/services/categories_service.dart';
 import 'package:bokrah/app/features/items/data/services/items_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ItemsPage extends StatefulWidget {
-  const ItemsPage({super.key});
+  final int? categoryId; // Added categoryId for filtering
+  const ItemsPage({super.key, this.categoryId});
 
   @override
   State<ItemsPage> createState() => _ItemsPageState();
@@ -12,20 +15,33 @@ class ItemsPage extends StatefulWidget {
 
 class _ItemsPageState extends State<ItemsPage> {
   final ItemsService _itemsService = ItemsService();
+  final CategoriesService _categoriesService =
+      CategoriesService(); // Added CategoriesService
   List<ItemEntity> _items = [];
+  List<CategoryEntity> _categories = []; // Added categories list
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadItems();
+    _loadData(); // Changed to _loadData
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final items = await _itemsService.getAllItems();
+    final allItems = await _itemsService.getAllItems();
+    final categories = await _categoriesService.getAllCategories();
+
+    // Filter items if categoryId is provided
+    final items = widget.categoryId != null
+        ? allItems
+              .where((item) => item.categoryId == widget.categoryId)
+              .toList()
+        : allItems;
+
     setState(() {
       _items = items;
+      _categories = categories;
       _isLoading = false;
     });
   }
@@ -47,6 +63,7 @@ class _ItemsPageState extends State<ItemsPage> {
     final descriptionController = TextEditingController(
       text: item?.description ?? '',
     );
+    int? selectedCategoryId = item?.categoryId;
 
     await showDialog(
       context: context,
@@ -195,6 +212,32 @@ class _ItemsPageState extends State<ItemsPage> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Category Dropdown
+                    DropdownButtonFormField<int>(
+                      value: selectedCategoryId,
+                      decoration: const InputDecoration(
+                        labelText: 'الفئة (اختياري)',
+                        prefixIcon: Icon(Icons.category),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('بدون فئة'),
+                        ),
+                        ..._categories.map(
+                          (cat) => DropdownMenuItem<int>(
+                            value: cat.id,
+                            child: Text(cat.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        selectedCategoryId = value;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Description Field
                     TextFormField(
                       controller: descriptionController,
@@ -232,6 +275,7 @@ class _ItemsPageState extends State<ItemsPage> {
                     description: descriptionController.text.trim().isEmpty
                         ? null
                         : descriptionController.text.trim(),
+                    categoryId: selectedCategoryId,
                     createdAt: item?.createdAt,
                   );
 
@@ -254,7 +298,7 @@ class _ItemsPageState extends State<ItemsPage> {
                         backgroundColor: const Color(0xFF2E7D64),
                       ),
                     );
-                    _loadItems();
+                    _loadData();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -313,7 +357,7 @@ class _ItemsPageState extends State<ItemsPage> {
             backgroundColor: Color(0xFF2E7D64),
           ),
         );
-        _loadItems();
+        _loadData();
       }
     }
   }
@@ -384,7 +428,7 @@ class _ItemsPageState extends State<ItemsPage> {
                 ),
               )
             : RefreshIndicator(
-                onRefresh: _loadItems,
+                onRefresh: _loadData,
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _items.length,
@@ -408,12 +452,43 @@ class _ItemsPageState extends State<ItemsPage> {
                             ),
                           ),
                         ),
-                        title: Text(
-                          item.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        title: Row(
+                          children: [
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (item.categoryId != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF2E7D64,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _categories
+                                      .firstWhere(
+                                        (c) => c.id == item.categoryId,
+                                        orElse: () =>
+                                            CategoryEntity(name: '...'),
+                                      )
+                                      .name,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF2E7D64),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,8 +654,8 @@ class _ItemsPageState extends State<ItemsPage> {
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showAddEditDialog(),
           backgroundColor: const Color(0xFF2E7D64),
-          child: const Icon(Icons.add, color: Colors.white),
           tooltip: 'إضافة عنصر جديد',
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
     );
