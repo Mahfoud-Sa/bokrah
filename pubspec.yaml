@@ -13,6 +13,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
   cupertino_icons: ^1.0.8
   get_it: ^8.0.3
@@ -24,6 +27,10 @@ dependencies:
   sqflite_common_ffi: ^2.3.6
   shared_preferences: ^2.2.2
   mobile_scanner: ^7.1.4
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  equatable: ^2.0.5
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -36,5 +43,6 @@ flutter:
 
   
   uses-material-design: true
+  generate: true
 
   

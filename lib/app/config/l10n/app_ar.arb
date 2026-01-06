@@ -1,0 +1,16 @@
+{
+  "@@locale": "ar",
+  "appName": "بكرة",
+  "items": "العناصر",
+  "units": "الوحدات",
+  "categories": "الفئات",
+  "warehouses": "المستودعات",
+  "users": "المستخدمين",
+  "profile": "الملف الشخصي",
+  "settings": "الإعدادات",
+  "language": "اللغة",
+  "theme": "المظهر",
+  "dark": "داكن",
+  "light": "فاتح",
+  "system": "النظام"
+}

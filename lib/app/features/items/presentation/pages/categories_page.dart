@@ -256,8 +256,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         },
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
-                            if (value == 'edit')
+                            if (value == 'edit') {
                               _showAddEditDialog(category: category);
+                            }
                             if (value == 'delete') _deleteCategory(category);
                           },
                           itemBuilder: (context) => [

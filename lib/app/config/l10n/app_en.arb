@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appName": "Bokrah",
+  "@appName": {
+    "description": "The name of the application"
+  },
+  "items": "Items",
+  "units": "Units",
+  "categories": "Categories",
+  "warehouses": "Warehouses",
+  "users": "Users",
+  "profile": "Profile",
+  "settings": "Settings",
+  "language": "Language",
+  "theme": "Theme",
+  "dark": "Dark",
+  "light": "Light",
+  "system": "System"
+}

@@ -4,6 +4,9 @@ import 'package:bokrah/app/features/home/notification_page.dart';
 import 'package:bokrah/app/features/home/contact_page.dart';
 import 'package:bokrah/app/features/home/side_bar_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bokrah/app/features/settings/presentation/cubits/settings_cubit.dart';
+import 'package:bokrah/app/config/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -93,6 +96,101 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _showLogoutDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Directionality(
+          textDirection:
+              context.read<SettingsCubit>().state.locale.languageCode == 'ar'
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          child: AlertDialog(
+            title: Text(AppLocalizations.of(context)!.appName),
+            content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('إلغاء'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('تسجيل الخروج'),
+                onPressed: () {
+                  // TODO: Add actual logout logic here
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).pop(); // Go back (simulate logout)
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserMenu({bool isMobile = false}) {
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      icon: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            width: 1.5,
+          ),
+        ),
+        child: CircleAvatar(
+          radius: isMobile ? 14 : 16,
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withValues(alpha: 0.1),
+          child: Icon(
+            Icons.person,
+            size: isMobile ? 18 : 20,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+      onSelected: (value) {
+        if (value == 'profile') {
+          context.go('/profile');
+        } else if (value == 'logout') {
+          _showLogoutDialog();
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'profile',
+          child: ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: Text(AppLocalizations.of(context)!.profile),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'logout',
+          child: ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.red),
+            ),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -114,7 +212,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 30),
           SidebarItem(
             icon: Icons.space_dashboard,
-            label: "لوحة التحكم",
+            label: AppLocalizations.of(context)!.appName,
             isSelected: selectedIndex == 0,
             onTap: () => setState(() => selectedIndex = 0),
           ),
@@ -132,7 +230,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SidebarItem(
             icon: Icons.inventory_2,
-            label: "العناصر",
+            label: AppLocalizations.of(context)!.items,
             isSelected: false,
             hasArrow: true,
             isExpanded: isItemsExpanded,
@@ -157,6 +255,12 @@ class _HomePageState extends State<HomePage> {
               isSelected: false,
               onTap: () => context.go('/categories'),
             ),
+            SidebarItem(
+              icon: Icons.straighten,
+              label: AppLocalizations.of(context)!.units,
+              isSelected: false,
+              onTap: () => context.go('/units'),
+            ),
           ],
           SidebarItem(
             icon: Icons.warehouse,
@@ -166,7 +270,7 @@ class _HomePageState extends State<HomePage> {
           ),
           SidebarItem(
             icon: Icons.settings,
-            label: "الإعدادات",
+            label: AppLocalizations.of(context)!.settings,
             isSelected: false,
             hasArrow: true,
             isExpanded: isSettingsExpanded,
@@ -200,7 +304,7 @@ class _HomePageState extends State<HomePage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -209,13 +313,12 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Title
           Text(
             selectedIndex == 0
-                ? "لوحة التحكم"
+                ? AppLocalizations.of(context)!.appName
                 : selectedIndex == 1
-                ? "المبيعات"
-                : "القيود",
+                ? AppLocalizations.of(context)!.items
+                : AppLocalizations.of(context)!.units,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -223,27 +326,101 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Actions (settings, logout, notifications)
+          // Settings & Profile Actions
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.person_outline, size: 28),
-                onPressed: () => context.go('/profile'),
+              // Settings Pill (Language & Theme)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Language Switcher (Text based)
+                    InkWell(
+                      onTap: () =>
+                          context.read<SettingsCubit>().toggleLanguage(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          context
+                                      .read<SettingsCubit>()
+                                      .state
+                                      .locale
+                                      .languageCode ==
+                                  'ar'
+                              ? 'EN'
+                              : 'AR',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Vertical Separator
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.15),
+                    ),
+                    const SizedBox(width: 4),
+                    // Theme Switcher
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      icon: Icon(
+                        context.read<SettingsCubit>().state.themeMode ==
+                                ThemeMode.dark
+                            ? Icons.light_mode_outlined
+                            : Icons.dark_mode_outlined,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      onPressed: () {
+                        final newMode =
+                            context.read<SettingsCubit>().state.themeMode ==
+                                ThemeMode.dark
+                            ? ThemeMode.light
+                            : ThemeMode.dark;
+                        context.read<SettingsCubit>().updateThemeMode(newMode);
+                      },
+                    ),
+                  ],
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.settings, size: 26),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Settings clicked")),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, size: 26),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
+
+              // User Menu
+              _buildUserMenu(),
+
+              const SizedBox(width: 4),
               Stack(
                 children: [
                   IconButton(
@@ -284,7 +461,10 @@ class _HomePageState extends State<HomePage> {
     );
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection:
+          context.read<SettingsCubit>().state.locale.languageCode == 'ar'
+          ? TextDirection.rtl
+          : TextDirection.ltr,
       child: Scaffold(
         appBar: isMobile
             ? AppBar(
@@ -299,35 +479,76 @@ class _HomePageState extends State<HomePage> {
                       : "القيود",
                 ),
                 actions: [
-                  // IconButton(
-                  //   icon: const Icon(Icons.settings, size: 26),
-                  //   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  //     const SnackBar(content: Text("Settings clicked")),
-                  //   ),
-                  // ),
-                  IconButton(
-                    icon: const Icon(Icons.person_outline, size: 28),
-                    onPressed: () => context.go('/profile'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.logout, size: 26),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, size: 28),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => AppUpdateScreen(
-                          packageInfo: PackageInfo(
-                            appName: 'appName',
-                            packageName: 'packageName',
-                            version: 'version',
-                            buildNumber: 'buildNumber',
+                  // Settings Pill (Language & Theme) for Mobile
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          onTap: () =>
+                              context.read<SettingsCubit>().toggleLanguage(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              context
+                                          .read<SettingsCubit>()
+                                          .state
+                                          .locale
+                                          .languageCode ==
+                                      'ar'
+                                  ? 'EN'
+                                  : 'AR',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          icon: Icon(
+                            context.read<SettingsCubit>().state.themeMode ==
+                                    ThemeMode.dark
+                                ? Icons.light_mode_outlined
+                                : Icons.dark_mode_outlined,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          onPressed: () {
+                            final newMode =
+                                context.read<SettingsCubit>().state.themeMode ==
+                                    ThemeMode.dark
+                                ? ThemeMode.light
+                                : ThemeMode.dark;
+                            context.read<SettingsCubit>().updateThemeMode(
+                              newMode,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
+                  // User Menu for Mobile
+                  _buildUserMenu(isMobile: true),
+                  const SizedBox(width: 4),
                 ],
               )
             : null,
@@ -540,6 +761,24 @@ class _HomePageState extends State<HomePage> {
                                         onTap: () {
                                           Navigator.of(context).pop();
                                           context.go('/categories');
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.straighten,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                        title: const Text(
+                                          'الوحدات',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.go('/units');
                                         },
                                       ),
                                     ],

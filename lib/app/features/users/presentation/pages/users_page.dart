@@ -239,10 +239,12 @@ class _UsersPageState extends State<UsersPage> {
             }
           : null,
       validator: (v) {
-        if (label.contains('*') && (v == null || v.isEmpty))
+        if (label.contains('*') && (v == null || v.isEmpty)) {
           return 'هذا الحقل مطلوب';
-        if (isEmail && v != null && v.isNotEmpty && !v.contains('@'))
+        }
+        if (isEmail && v != null && v.isNotEmpty && !v.contains('@')) {
           return 'بريد غير صحيح';
+        }
         return null;
       },
     );

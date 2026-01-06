@@ -53,7 +53,7 @@ class _BarcodesPageState extends State<BarcodesPage> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Container(
+      builder: (context) => SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           children: [
@@ -295,8 +295,9 @@ class _BarcodesPageState extends State<BarcodesPage> {
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
-                            if (value == 'edit')
+                            if (value == 'edit') {
                               _showAddEditDialog(barcode: barcode);
+                            }
                             if (value == 'delete') {
                               _barcodesService
                                   .deleteBarcode(barcode.id!)
@@ -410,7 +411,7 @@ class _SearchableItemSelectionDialogState
 
     return AlertDialog(
       title: Text('إدارة العناصر لباركود: ${widget.barcode.code}'),
-      content: Container(
+      content: SizedBox(
         width: double.maxFinite,
         height: 400, // Fixed height for better scrolling
         child: Column(

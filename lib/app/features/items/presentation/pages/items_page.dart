@@ -2,8 +2,13 @@ import 'package:bokrah/app/features/items/data/entities/category_entity.dart';
 import 'package:bokrah/app/features/items/data/entities/item_entity.dart';
 import 'package:bokrah/app/features/items/data/services/categories_service.dart';
 import 'package:bokrah/app/features/items/data/services/items_service.dart';
+import 'package:bokrah/app/features/units/data/datasources/unit_local_datasource.dart';
+import 'package:bokrah/app/features/units/data/repositories/unit_repository_impl.dart';
+import 'package:bokrah/app/features/units/domain/usecases/unit_usecases.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 class ItemsPage extends StatefulWidget {
   final int? categoryId; // Added categoryId for filtering
@@ -15,22 +20,38 @@ class ItemsPage extends StatefulWidget {
 
 class _ItemsPageState extends State<ItemsPage> {
   final ItemsService _itemsService = ItemsService();
-  final CategoriesService _categoriesService =
-      CategoriesService(); // Added CategoriesService
+  final CategoriesService _categoriesService = CategoriesService();
+
   List<ItemEntity> _items = [];
-  List<CategoryEntity> _categories = []; // Added categories list
+  List<CategoryEntity> _categories = [];
+  Map<int, String> _baseUnits = {}; // Map itemId to base unit name
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadData(); // Changed to _loadData
+    _loadData();
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final allItems = await _itemsService.getAllItems();
     final categories = await _categoriesService.getAllCategories();
+
+    final prefs = await SharedPreferences.getInstance();
+    final unitDataSource = UnitLocalDataSourceImpl(sharedPreferences: prefs);
+    final unitRepo = UnitRepositoryImpl(localDataSource: unitDataSource);
+    final getAllUnits = GetAllUnitsUseCase(unitRepo);
+
+    final allUnits = await getAllUnits();
+
+    // Map base units (factor 1.0) to item ids
+    final baseUnitsMap = <int, String>{};
+    for (var unit in allUnits) {
+      if (unit.factor == 1.0) {
+        baseUnitsMap[unit.itemId] = unit.name;
+      }
+    }
 
     // Filter items if categoryId is provided
     final items = widget.categoryId != null
@@ -42,287 +63,16 @@ class _ItemsPageState extends State<ItemsPage> {
     setState(() {
       _items = items;
       _categories = categories;
+      _baseUnits = baseUnitsMap;
       _isLoading = false;
     });
   }
 
-  Future<void> _showAddEditDialog({ItemEntity? item}) async {
-    final isEditing = item != null;
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: item?.name ?? '');
-    final sellPriceController = TextEditingController(
-      text: item?.sellPrice.toString() ?? '',
-    );
-    final purchasePriceController = TextEditingController(
-      text: item?.purchasePrice.toString() ?? '',
-    );
-    final quantityController = TextEditingController(
-      text: item?.quantity.toString() ?? '',
-    );
-    final qrCodeController = TextEditingController(text: item?.qrCode ?? '');
-    final descriptionController = TextEditingController(
-      text: item?.description ?? '',
-    );
-    int? selectedCategoryId = item?.categoryId;
-
-    await showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: Text(isEditing ? 'تعديل العنصر' : 'إضافة عنصر جديد'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.9,
-            child: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Name Field
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم العنصر *',
-                        hintText: 'أدخل اسم العنصر',
-                        prefixIcon: Icon(Icons.label),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'يرجى إدخال اسم العنصر';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Purchase Price and Sell Price Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: purchasePriceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}'),
-                              ),
-                            ],
-                            decoration: const InputDecoration(
-                              labelText: 'سعر الشراء *',
-                              hintText: '0.00',
-                              prefixIcon: Icon(
-                                Icons.shopping_cart,
-                                color: Colors.orange,
-                              ),
-                              border: OutlineInputBorder(),
-                              suffixText: 'ر.س',
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'يرجى إدخال سعر الشراء';
-                              }
-                              if (double.tryParse(value) == null) {
-                                return 'يرجى إدخال رقم صحيح';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: sellPriceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}'),
-                              ),
-                            ],
-                            decoration: const InputDecoration(
-                              labelText: 'سعر البيع *',
-                              hintText: '0.00',
-                              prefixIcon: Icon(
-                                Icons.attach_money,
-                                color: Colors.green,
-                              ),
-                              border: OutlineInputBorder(),
-                              suffixText: 'ر.س',
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'يرجى إدخال سعر البيع';
-                              }
-                              if (double.tryParse(value) == null) {
-                                return 'يرجى إدخال رقم صحيح';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Quantity Field
-                    TextFormField(
-                      controller: quantityController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(
-                        labelText: 'الكمية *',
-                        hintText: '0',
-                        prefixIcon: Icon(Icons.inventory),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'يرجى إدخال الكمية';
-                        }
-                        if (int.tryParse(value) == null) {
-                          return 'يرجى إدخال رقم صحيح';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // QR Code Field
-                    TextFormField(
-                      controller: qrCodeController,
-                      decoration: InputDecoration(
-                        labelText: 'رمز QR (اختياري)',
-                        hintText: 'أدخل رمز QR أو امسح الرمز',
-                        prefixIcon: const Icon(Icons.qr_code),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('ماسح QR قريباً')),
-                            );
-                          },
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Category Dropdown
-                    DropdownButtonFormField<int>(
-                      value: selectedCategoryId,
-                      decoration: const InputDecoration(
-                        labelText: 'الفئة (اختياري)',
-                        prefixIcon: Icon(Icons.category),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: [
-                        const DropdownMenuItem<int>(
-                          value: null,
-                          child: Text('بدون فئة'),
-                        ),
-                        ..._categories.map(
-                          (cat) => DropdownMenuItem<int>(
-                            value: cat.id,
-                            child: Text(cat.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        selectedCategoryId = value;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description Field
-                    TextFormField(
-                      controller: descriptionController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'الوصف (اختياري)',
-                        hintText: 'أدخل وصف العنصر',
-                        prefixIcon: Icon(Icons.description),
-                        border: OutlineInputBorder(),
-                        alignLabelWithHint: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  final newItem = ItemEntity(
-                    id: item?.id,
-                    name: nameController.text.trim(),
-                    sellPrice: double.parse(sellPriceController.text),
-                    purchasePrice: double.parse(purchasePriceController.text),
-                    quantity: int.parse(quantityController.text),
-                    qrCode: qrCodeController.text.trim().isEmpty
-                        ? null
-                        : qrCodeController.text.trim(),
-                    description: descriptionController.text.trim().isEmpty
-                        ? null
-                        : descriptionController.text.trim(),
-                    categoryId: selectedCategoryId,
-                    createdAt: item?.createdAt,
-                  );
-
-                  bool success;
-                  if (isEditing) {
-                    success = await _itemsService.updateItem(newItem);
-                  } else {
-                    success = await _itemsService.saveItem(newItem);
-                  }
-
-                  if (success) {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isEditing
-                              ? 'تم تحديث العنصر بنجاح'
-                              : 'تم حفظ العنصر بنجاح',
-                        ),
-                        backgroundColor: const Color(0xFF2E7D64),
-                      ),
-                    );
-                    _loadData();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isEditing
-                              ? 'حدث خطأ أثناء تحديث العنصر'
-                              : 'حدث خطأ أثناء حفظ العنصر',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D64),
-                foregroundColor: Colors.white,
-              ),
-              child: Text(isEditing ? 'تحديث' : 'حفظ'),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _navigateToAddEdit({ItemEntity? item}) async {
+    final result = await context.push<bool>('/add-item', extra: item);
+    if (result == true) {
+      _loadData();
+    }
   }
 
   Future<void> _deleteItem(ItemEntity item) async {
@@ -379,7 +129,7 @@ class _ItemsPageState extends State<ItemsPage> {
           actions: [
             IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => _showAddEditDialog(),
+              onPressed: () => _navigateToAddEdit(),
               tooltip: 'إضافة عنصر جديد',
             ),
           ],
@@ -412,7 +162,7 @@ class _ItemsPageState extends State<ItemsPage> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
-                      onPressed: () => _showAddEditDialog(),
+                      onPressed: () => _navigateToAddEdit(),
                       icon: const Icon(Icons.add),
                       label: const Text('إضافة عنصر'),
                       style: ElevatedButton.styleFrom(
@@ -546,7 +296,7 @@ class _ItemsPageState extends State<ItemsPage> {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    'الكمية: ${item.quantity}',
+                                    'الكمية: ${item.quantity} ${_baseUnits[item.id] ?? ''}',
                                     style: TextStyle(
                                       color: Colors.grey[700],
                                       fontWeight: FontWeight.w500,
@@ -618,7 +368,7 @@ class _ItemsPageState extends State<ItemsPage> {
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
                             if (value == 'edit') {
-                              _showAddEditDialog(item: item);
+                              _navigateToAddEdit(item: item);
                             } else if (value == 'delete') {
                               _deleteItem(item);
                             }
@@ -652,7 +402,7 @@ class _ItemsPageState extends State<ItemsPage> {
                 ),
               ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddEditDialog(),
+          onPressed: () => _navigateToAddEdit(),
           backgroundColor: const Color(0xFF2E7D64),
           tooltip: 'إضافة عنصر جديد',
           child: const Icon(Icons.add, color: Colors.white),
