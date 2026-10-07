@@ -2,12 +2,17 @@
 ; Generated for Flutter Windows build
 
 #define MyAppName "Bokrah"
-#define MyAppVersion "3.3.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "3.3.0"
+#endif
 #define MyAppPublisher "mahfoud bin sabbah"
 #define MyAppURL "www.linkedin.com/in/mahfoud-sa"
 #define MyAppExeName "bokrah.exe"
 #ifndef BuildDir
   #define BuildDir "..\build\windows\x64\runner\Release"
+#endif
+#ifndef OutputBaseFilename
+  #define OutputBaseFilename "bokrah-setup-" + MyAppVersion
 #endif
 
 [Setup]
@@ -23,7 +28,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=BokrahSetup-{#MyAppVersion}
+OutputBaseFilename={#OutputBaseFilename}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
