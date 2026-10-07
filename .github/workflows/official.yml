@@ -6,10 +6,10 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release version (e.g. 3.3.0 or v3.3.0)'
+      tag_version:
+        description: 'Release tag version (e.g. v3.3.0 or 3.3.0)'
         required: true
-        default: '3.3.0'
+        default: 'v3.3.0'
         type: string
 
 # Grant write permissions for creating GitHub Releases
@@ -28,16 +28,16 @@ jobs:
         id: version_info
         shell: pwsh
         run: |
-          if ('${{ github.event_name }}' -eq 'workflow_dispatch' -and '${{ inputs.version }}' -ne '') {
-            $raw = '${{ inputs.version }}'.Trim()
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $raw = if ('${{ inputs.tag_version }}' -ne '') { '${{ inputs.tag_version }}'.Trim() } else { '${{ inputs.version }}'.Trim() }
           } elseif ('${{ github.ref_name }}' -ne '') {
             $raw = '${{ github.ref_name }}'.Trim()
           } else {
-            $raw = '3.3.0'
+            $raw = 'v3.3.0'
           }
 
           $clean = $raw -replace '^v', ''
-          $tag = if ($raw -match '^v') { $raw } else { "v$clean" }
+          $tag = $raw
 
           echo "tag_version=$tag" >> $env:GITHUB_OUTPUT
           echo "clean_version=$clean" >> $env:GITHUB_OUTPUT
@@ -104,7 +104,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version_info.outputs.tag_version }}
-          name: Release ${{ steps.version_info.outputs.tag_version }}
+          name: release ${{ steps.version_info.outputs.tag_version }}
           body: "Flutter Windows Desktop Release"
           files: ${{ steps.find-installer.outputs.installer_path }}
           draft: false
