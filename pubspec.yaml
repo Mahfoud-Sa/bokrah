@@ -1,14 +1,12 @@
 name: bokrah
 description: "a basic of bokrah systems"
 
-publish_to: 'none' 
+publish_to: "none"
 
-
-version: 3.2.0
+version: 3.3.0
 
 environment:
   sdk: ^3.8.1
-
 
 dependencies:
   flutter:
@@ -30,19 +28,16 @@ dependencies:
   flutter_bloc: ^8.1.6
   bloc: ^8.1.4
   equatable: ^2.0.5
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
- 
   flutter_lints: ^5.0.0
 
-
 flutter:
-
-  
   uses-material-design: true
   generate: true
 
-  
+  assets:
+    - assets/images/

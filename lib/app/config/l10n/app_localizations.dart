@@ -172,6 +172,51 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System'**
   String get system;
+
+  String get welcomeHeading;
+  String get welcomeSupporting;
+  String get phoneNumber;
+  String get phoneHint;
+  String get countryCode;
+  String get searchCountry;
+  String get sendVerificationCode;
+  String get termsAndPrivacyPrefix;
+  String get termsOfService;
+  String get and;
+  String get privacyPolicy;
+  String get invalidPhoneNumber;
+  String get verificationTitle;
+  String get verificationSubtitle;
+  String get editPhone;
+  String get verifyAndSignIn;
+  String get didntReceiveCode;
+  String get resendCode;
+  String get resendInSeconds;
+  String get invalidOtpError;
+  String get expiredOtpError;
+  String get rateLimitError;
+  String get networkError;
+  String get enterCompleteCode;
+  String get termsOfServiceTitle;
+  String get termsOfServiceContent;
+  String get privacyPolicyTitle;
+  String get privacyPolicyContent;
+  String get close;
+  String get switchLanguage;
+  String get testCredentialsHint;
+  String get signIn;
+  String get email;
+  String get emailHint;
+  String get password;
+  String get passwordHint;
+  String get invalidEmail;
+  String get passwordTooShort;
+  String get forgotPassword;
+  String get forgotPasswordNotice;
+  String get invalidCredentialsError;
+  String get signInWithEmail;
+  String get signInWithPhone;
+  String get demoCredentialsNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
