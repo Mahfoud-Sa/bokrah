@@ -2,17 +2,19 @@
 ; Generated for Flutter Windows build
 
 #define MyAppName "Bokrah"
-#define MyAppVersion "1.0"
+#define MyAppVersion "3.3.0"
 #define MyAppPublisher "mahfoud bin sabbah"
 #define MyAppURL "www.linkedin.com/in/mahfoud-sa"
 #define MyAppExeName "bokrah.exe"
-#define BuildDir "C:\Users\Mahfoud_Sa\Documents\bokrah\build\windows\x64\runner\Release"
+#ifndef BuildDir
+  #define BuildDir "..\build\windows\x64\runner\Release"
+#endif
 
 [Setup]
 AppId=12345678-1234-1234-1234-123456789ABC
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-SetupIconFile=assets\icons\app_icon.ico  
+SetupIconFile=..\assets\icon\app_icon.ico  
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -20,7 +22,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputDir=userdocs:\Bokrah Installers
+OutputDir=..\dist
 OutputBaseFilename=BokrahSetup-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
@@ -37,7 +39,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#BuildDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "assets\icons\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\assets\icon\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "{app}\app_icon.ico"
