@@ -7,6 +7,7 @@ import 'package:bokrah/app/config/l10n/app_localizations.dart';
 import 'package:bokrah/app/initialzation_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,6 +25,9 @@ Future<void> main() async {
           create: (context) => SettingsCubit(
             localDataSource: SettingsLocalDataSource(sharedPreferences: prefs),
           ),
+        ),
+        BlocProvider(
+          create: (context) => singelton<AppUpdateCubit>(),
         ),
       ],
       child: MyApp(packageInfo: packageInfo),

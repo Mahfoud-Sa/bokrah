@@ -1,4 +1,7 @@
 import 'package:bokrah/app/features/autoUpdate/presentation/app_update_screen.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_state.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/dialogs/update_prompt_dialog.dart';
 import 'package:bokrah/app/features/home/main_content.dart';
 import 'package:bokrah/app/features/home/notification_page.dart';
 import 'package:bokrah/app/features/home/contact_page.dart';
@@ -22,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   PackageInfo? _packageInfo;
   bool isItemsExpanded = false;
   bool isSettingsExpanded = false;
+  bool _hasPromptedUpdateThisSession = false;
 
   final List<Widget> pages = const [
     DashboardPage(),
@@ -33,6 +37,9 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initPackageInfo();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppUpdateCubit>().checkForUpdates(isManual: false);
+    });
   }
 
   Future<void> _initPackageInfo() async {
@@ -421,38 +428,36 @@ class _HomePageState extends State<HomePage> {
               _buildUserMenu(),
 
               const SizedBox(width: 4),
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, size: 28),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AppUpdateScreen(
-                            packageInfo: PackageInfo(
-                              appName: 'appName',
-                              packageName: 'packageName',
-                              version: 'version',
-                              buildNumber: 'buildNumber',
+              BlocBuilder<AppUpdateCubit, AppUpdateState>(
+                builder: (context, updateState) {
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, size: 28),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const AppUpdateScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      if (updateState.hasUnskippedUpdate)
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                  Positioned(
-                    right: 6,
-                    top: 6,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -460,12 +465,25 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    return Directionality(
-      textDirection:
-          context.read<SettingsCubit>().state.locale.languageCode == 'ar'
-          ? TextDirection.rtl
-          : TextDirection.ltr,
-      child: Scaffold(
+    return BlocListener<AppUpdateCubit, AppUpdateState>(
+      listener: (context, state) {
+        if (state is AppUpdateAvailable &&
+            state.hasUnskippedUpdate &&
+            !_hasPromptedUpdateThisSession) {
+          _hasPromptedUpdateThisSession = true;
+          UpdatePromptDialog.show(
+            context,
+            release: state.release,
+            installedVersion: state.installedVersion,
+          );
+        }
+      },
+      child: Directionality(
+        textDirection:
+            context.read<SettingsCubit>().state.locale.languageCode == 'ar'
+            ? TextDirection.rtl
+            : TextDirection.ltr,
+        child: Scaffold(
         appBar: isMobile
             ? AppBar(
                 backgroundColor: Colors.white,
@@ -549,6 +567,37 @@ class _HomePageState extends State<HomePage> {
                   // User Menu for Mobile
                   _buildUserMenu(isMobile: true),
                   const SizedBox(width: 4),
+                  BlocBuilder<AppUpdateCubit, AppUpdateState>(
+                    builder: (context, updateState) {
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined, size: 24),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const AppUpdateScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (updateState.hasUnskippedUpdate)
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               )
             : null,
@@ -932,8 +981,9 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // Pages

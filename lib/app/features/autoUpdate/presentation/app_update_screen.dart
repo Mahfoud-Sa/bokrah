@@ -1,177 +1,139 @@
-import 'package:bokrah/github_releses.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../domain/entities/app_release.dart';
+import 'cubits/app_update_cubit.dart';
+import 'cubits/app_update_state.dart';
 
 class AppUpdateScreen extends StatefulWidget {
-  final PackageInfo packageInfo;
+  final PackageInfo? packageInfo;
 
-  const AppUpdateScreen({super.key, required this.packageInfo});
+  const AppUpdateScreen({super.key, this.packageInfo});
 
   @override
   State<AppUpdateScreen> createState() => _AppUpdateScreenState();
 }
 
 class _AppUpdateScreenState extends State<AppUpdateScreen> {
-  late Future<Map<String, dynamic>?> _releaseFuture;
-  bool _isUpdateAvailable = false;
-  String? _downloadUrl;
-  String? _releaseNotesUrl;
-
   @override
   void initState() {
     super.initState();
-    _fetchLatestRelease();
-  }
-
-  void _fetchLatestRelease() {
-    setState(() {
-      _releaseFuture = _getLatestRelease();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppUpdateCubit>().checkForUpdates(isManual: true);
     });
   }
 
-  Future<Map<String, dynamic>?> _getLatestRelease() async {
-    try {
-      // Call GitHub API to get releases
-      final releases = await GitHubApiService.listReleases(
-        'Mahfoud-Sa',
-        'bokrah',
-      );
-
-      if (releases.isEmpty) return null;
-
-      // Get the latest release (first one in the list)
-      final latestRelease = releases.first;
-
-      // Compare versions
-      final currentVersion = _parseVersion(widget.packageInfo.version);
-      final latestVersion = _parseVersion(
-        latestRelease['tag_name']?.toString().replaceFirst('v', '') ?? '0.0.0',
-      );
-
-      setState(() {
-        _isUpdateAvailable =
-            _compareVersions(currentVersion, latestVersion) < 0;
-        _downloadUrl = _findInstallerUrl(latestRelease['assets']);
-        _releaseNotesUrl = latestRelease['html_url'];
-      });
-
-      return latestRelease;
-    } catch (e) {
-      throw Exception('Failed to fetch releases: $e');
-    }
-  }
-
-  List<int> _parseVersion(String version) {
-    return version.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-  }
-
-  int _compareVersions(List<int> current, List<int> latest) {
-    for (int i = 0; i < current.length; i++) {
-      if (i >= latest.length) return 0;
-      if (current[i] < latest[i]) return -1;
-      if (current[i] > latest[i]) return 1;
-    }
-    return 0;
-  }
-
-  String? _findInstallerUrl(List<dynamic>? assets) {
-    if (assets == null) return null;
-    for (final asset in assets) {
-      if (asset['name'].toString().toLowerCase().endsWith('.exe')) {
-        return asset['browser_download_url'];
-      }
-    }
-    return null;
-  }
-
-  Future<void> _launchDownload(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(
-          url,
-        ),
-        mode: LaunchMode.externalApplication,
-      );
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch download URL: $url')),
-        );
-      }
-    }
+  void _refresh() {
+    context.read<AppUpdateCubit>().checkForUpdates(isManual: true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.packageInfo?.appName.isNotEmpty == true
+        ? widget.packageInfo!.appName
+        : 'App Updates';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.packageInfo.appName),
+        title: Text(title),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _fetchLatestRelease,
+            onPressed: _refresh,
             tooltip: 'Check for updates',
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Current version info
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    const Icon(Icons.info_outline, size: 48),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Current Version: ${widget.packageInfo.version}',
-                      style: Theme.of(context).textTheme.titleMedium,
+      body: BlocBuilder<AppUpdateCubit, AppUpdateState>(
+        builder: (context, state) {
+          final installedVersion = state is AppUpdateInitial
+              ? state.installedVersion
+              : (state is AppUpdateChecking
+                  ? state.installedVersion
+                  : (state is AppUpdateAvailable
+                      ? state.installedVersion
+                      : (state is AppUpdateUpToDate
+                          ? state.installedVersion
+                          : (state is AppUpdateError
+                              ? state.installedVersion
+                              : (widget.packageInfo?.version ?? '')))));
+
+          final buildNumber = widget.packageInfo?.buildNumber ?? '';
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView(
+              children: [
+                // Current version info
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.info_outline, size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Current Version: ${installedVersion.isNotEmpty ? installedVersion : (widget.packageInfo?.version ?? 'Unknown')}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        if (buildNumber.isNotEmpty)
+                          Text(
+                            'Build: $buildNumber',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
                     ),
-                    Text(
-                      'Build: ${widget.packageInfo.buildNumber}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 24),
+
+                // Update status dynamic view
+                if (state is AppUpdateChecking)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (state is AppUpdateError)
+                  _buildErrorState(context, state.message)
+                else if (state is AppUpdateAvailable)
+                  _buildReleaseCard(context, state.release, isUpdateAvailable: true)
+                else if (state is AppUpdateUpToDate)
+                  _buildNoUpdatesState(state.release)
+                else if (state is AppUpdateNoReleases)
+                  _buildNoReleasesState()
+                else
+                  _buildInitialState(),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Update status
-            FutureBuilder<Map<String, dynamic>?>(
-              future: _releaseFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return _buildErrorState(snapshot.error.toString());
-                }
-
-                if (!snapshot.hasData || snapshot.data == null) {
-                  return _buildNoUpdatesState();
-                }
-
-                final release = snapshot.data!;
-                return _buildReleaseCard(release);
-              },
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildReleaseCard(Map<String, dynamic> release) {
+  Future<void> _handleDownload(BuildContext context, String url) async {
+    final success = await context.read<AppUpdateCubit>().launchDownload(url);
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Could not open external browser to download the installer.'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () => _handleDownload(context, url),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildReleaseCard(BuildContext context, AppRelease release, {required bool isUpdateAvailable}) {
+    final hasDirectInstaller = release.downloadUrl != null && release.downloadUrl!.isNotEmpty;
+
     return Card(
-      color: _isUpdateAvailable ? Colors.blue[50] : null,
+      color: isUpdateAvailable ? Colors.blue[50] : null,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -180,67 +142,96 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
             Row(
               children: [
                 Icon(
-                  _isUpdateAvailable ? Icons.system_update : Icons.check_circle,
-                  color: _isUpdateAvailable ? Colors.blue : Colors.green,
+                  isUpdateAvailable ? Icons.system_update : Icons.check_circle,
+                  color: isUpdateAvailable ? Colors.blue : Colors.green,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isUpdateAvailable
-                      ? 'Update Available!'
-                      : 'You\'re up to date',
+                  isUpdateAvailable ? 'Update Available!' : "You're up to date",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _isUpdateAvailable ? Colors.blue : Colors.green,
+                    color: isUpdateAvailable ? Colors.blue : Colors.green,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
-              release['name']?.toString() ?? 'No Name',
+              release.name.isNotEmpty ? release.name : release.tagName,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Text('Version: ${release['tag_name']}'),
-            Text(
-              'Published: ${release['published_at']?.toString().split('T').first ?? 'Unknown'}',
-            ),
-            if (release['body'] != null &&
-                release['body'].toString().isNotEmpty) ...[
+            Text('Version: ${release.tagName}'),
+            if (release.publishedAt != null)
+              Text(
+                'Published: ${release.publishedAt!.toIso8601String().split('T').first}',
+              ),
+            if (release.body.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text(release['body'].toString()),
+              Text(release.body),
             ],
-
             const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.download),
-                label: const Text('Download Update'),
-                onPressed: () => _launchDownload(_downloadUrl!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+            if (hasDirectInstaller)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download Update'),
+                  onPressed: () => _handleDownload(context, release.downloadUrl!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              )
+            else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withAlpha(40),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'A direct installer is not available for this platform. You can visit the official release page to view and download release files.',
+                  style: TextStyle(fontSize: 13),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-
-            if (_releaseNotesUrl != null)
-              OutlinedButton.icon(
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('View Release Notes'),
-                onPressed: () => _launchDownload(_releaseNotesUrl!),
+              const SizedBox(height: 12),
+              if (release.htmlUrl != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('View Release Page'),
+                    onPressed: () => _handleDownload(context, release.htmlUrl!),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+            ],
+            if (hasDirectInstaller && release.htmlUrl != null) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('View Release Notes'),
+                  onPressed: () => _handleDownload(context, release.htmlUrl!),
+                ),
               ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildErrorState(String error) {
+  Widget _buildErrorState(BuildContext context, String error) {
     return Card(
       color: Colors.red[50],
       child: Padding(
@@ -253,10 +244,15 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
               'Failed to check for updates',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(error, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _fetchLatestRelease,
+              onPressed: _refresh,
               child: const Text('Try Again'),
             ),
           ],
@@ -265,22 +261,65 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     );
   }
 
-  Widget _buildNoUpdatesState() {
-    return const Card(
+  Widget _buildNoUpdatesState(AppRelease? release) {
+    return Card(
       child: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 48),
-            SizedBox(height: 16),
-            Text(
+            const Icon(Icons.check_circle, color: Colors.green, size: 48),
+            const SizedBox(height: 16),
+            const Text(
               'No updates available',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text('You have the latest version of the app.'),
+            const SizedBox(height: 8),
+            const Text('You have the latest version of the app.'),
+            if (release != null && release.htmlUrl != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('View Latest Release Notes'),
+                onPressed: () {
+                  context.read<AppUpdateCubit>().launchDownload(release.htmlUrl!);
+                },
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildNoReleasesState() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            const Icon(Icons.cloud_off, color: Colors.blueGrey, size: 48),
+            const SizedBox(height: 16),
+            const Text(
+              'No Published Releases',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'No official releases have been published for this repository yet.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refresh,
+              child: const Text('Check Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitialState() {
+    return const SizedBox.shrink();
   }
 }

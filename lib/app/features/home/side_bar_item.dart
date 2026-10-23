@@ -30,12 +30,15 @@ class SidebarItem extends StatelessWidget {
           children: [
             Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (hasArrow) ...[
-              const Spacer(),
+              const SizedBox(width: 8),
               Icon(
                 isExpanded
                     ? Icons.keyboard_arrow_up
