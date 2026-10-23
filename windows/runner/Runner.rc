@@ -118,6 +118,4 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-#endif    // not APSTUDIO_INVOKED
-
-DSAPub      DSAPEM      "../../dsa_pub.pem"
+#endif    // not APSTUDIO_INVOKED
