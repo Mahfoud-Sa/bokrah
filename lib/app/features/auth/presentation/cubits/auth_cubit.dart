@@ -21,11 +21,35 @@ class AuthCubit extends Cubit<AuthState> {
     ));
   }
 
+  void setIdentifier(String value) {
+    final trimmed = value.trim();
+    if (trimmed.contains('@')) {
+      emit(state.copyWith(
+        loginMethod: LoginMethod.email,
+        email: trimmed,
+        rawPhoneNumber: '',
+        clearError: true,
+      ));
+    } else {
+      var phone = trimmed;
+      if (phone.startsWith('+966')) {
+        phone = phone.substring(4);
+      } else if (phone.startsWith('00966')) {
+        phone = phone.substring(5);
+      } else if (phone.startsWith('0') && phone.length > 9) {
+        phone = phone.substring(1);
+      }
+      emit(state.copyWith(
+        loginMethod: LoginMethod.phone,
+        rawPhoneNumber: phone,
+        email: trimmed,
+        clearError: true,
+      ));
+    }
+  }
+
   void setEmail(String email) {
-    emit(state.copyWith(
-      email: email,
-      clearError: true,
-    ));
+    setIdentifier(email);
   }
 
   void setPassword(String password) {
@@ -49,10 +73,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void setPhoneNumber(String phone) {
-    emit(state.copyWith(
-      rawPhoneNumber: phone,
-      clearError: true,
-    ));
+    setIdentifier(phone);
   }
 
   void setOtpCode(String otp) {
@@ -76,12 +97,29 @@ class AuthCubit extends Cubit<AuthState> {
     ));
   }
 
-  /// Sign in using either Email + Password OR Phone Number + Password.
+  String _normalizePhone(String phone) {
+    var p = phone.trim();
+    if (p.startsWith('+')) {
+      return p;
+    }
+    if (p.startsWith('00')) {
+      return '+${p.substring(2)}';
+    }
+    if (p.startsWith('0')) {
+      p = p.substring(1);
+    }
+    return '+966$p';
+  }
+
+  /// Sign in using unified identifier (Email OR Phone Number) + Password.
   /// Prevents duplicate concurrent requests.
   Future<void> submitLogin() async {
     if (state.isSubmitting) return;
 
-    if (state.loginMethod == LoginMethod.email) {
+    final id = state.email.trim();
+    final isEmail = id.contains('@');
+
+    if (isEmail) {
       if (!state.isEmailValid || !state.isPasswordValid) {
         emit(state.copyWith(
           status: AuthStatus.error,
@@ -98,7 +136,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       try {
         await _authService.loginWithEmailAndPassword(
-          email: state.email.trim(),
+          email: id,
           password: state.password,
         );
 
@@ -121,7 +159,8 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } else {
       // Phone + Password
-      if (!state.isPhoneValid || !state.isPasswordValid) {
+      final phone = state.rawPhoneNumber.isNotEmpty ? state.rawPhoneNumber : id;
+      if (phone.length < 6 || !state.isPasswordValid) {
         emit(state.copyWith(
           status: AuthStatus.error,
           errorCode: AuthErrorCode.invalidCredentials,
@@ -130,8 +169,7 @@ class AuthCubit extends Cubit<AuthState> {
         return;
       }
 
-      final normalized =
-          state.selectedCountry.normalize(state.rawPhoneNumber);
+      final normalized = _normalizePhone(phone);
 
       emit(state.copyWith(
         status: AuthStatus.loading,

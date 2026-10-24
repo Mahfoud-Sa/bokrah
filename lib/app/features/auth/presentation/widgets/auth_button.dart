@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../config/theme.dart';
 
 class AuthButton extends StatelessWidget {
   final String text;
@@ -18,29 +17,29 @@ class AuthButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = onPressed != null && !isLoading;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return SizedBox(
       width: double.infinity,
-      height: 54,
+      height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.deepOrange,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          disabledBackgroundColor:
-              AppTheme.deepOrange.withValues(alpha: 0.4),
-          disabledForegroundColor: Colors.white.withValues(alpha: 0.8),
-          elevation: isEnabled ? 4 : 0,
-          shadowColor: AppTheme.deepOrange.withValues(alpha: 0.4),
+          disabledBackgroundColor: primaryColor.withValues(alpha: 0.35),
+          disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
+          elevation: isEnabled ? 2 : 0,
+          shadowColor: primaryColor.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24),
         ),
         onPressed: isEnabled ? onPressed : null,
         child: isLoading
             ? const SizedBox(
-                width: 24,
-                height: 24,
+                width: 22,
+                height: 22,
                 child: CircularProgressIndicator(
                   color: Colors.white,
                   strokeWidth: 2.5,

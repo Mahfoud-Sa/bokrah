@@ -11,7 +11,6 @@ import 'package:bokrah/app/features/autoUpdate/presentation/dialogs/update_promp
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_cubit.dart';
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_state.dart';
 import 'package:bokrah/app/features/accounting_playground/accounting.dart';
-import 'package:bokrah/app/features/design_patterns/design_patterns.dart';
 import 'package:bokrah/app/features/items/presentation/pages/items_page.dart';
 import 'package:bokrah/app/features/items/presentation/pages/categories_page.dart';
 import 'package:bokrah/app/features/warehouses/presentation/pages/warehouses_page.dart';
@@ -184,7 +183,7 @@ class _HomePageState extends State<HomePage> {
       ),
       onSelected: (value) {
         if (value == 'profile') {
-          setState(() => selectedIndex = 13);
+          setState(() => selectedIndex = 12);
         } else if (value == 'logout') {
           _showLogoutDialog();
         }
@@ -225,14 +224,13 @@ class _HomePageState extends State<HomePage> {
         3 => 'إدارة الفواتير',
         4 => 'شجرة الحسابات',
         5 => 'التقارير المالية',
-        6 => 'أنماط التصميم',
-        7 => 'قائمة العناصر',
-        8 => 'فئات المنتجات',
-        9 => 'إدارة المستودعات',
-        10 => 'وحدات القياس',
-        11 => 'إدارة الباركودات',
-        12 => 'إدارة المستخدمين',
-        13 => 'الملف الشخصي',
+        6 => 'قائمة العناصر',
+        7 => 'فئات المنتجات',
+        8 => 'إدارة المستودعات',
+        9 => 'وحدات القياس',
+        10 => 'إدارة الباركودات',
+        11 => 'إدارة المستخدمين',
+        12 => 'الملف الشخصي',
         _ => AppLocalizations.of(context)?.appName ?? 'بكرة للمحاسبة',
       };
     }
@@ -243,14 +241,13 @@ class _HomePageState extends State<HomePage> {
       3 => 'Invoice Management',
       4 => 'Chart of Accounts',
       5 => 'Financial Reports',
-      6 => 'Design Patterns Catalogue',
-      7 => 'Items Catalogue',
-      8 => 'Product Categories',
-      9 => 'Warehouse Management',
-      10 => 'Units of Measure',
-      11 => 'Barcode Management',
-      12 => 'User Management',
-      13 => 'My Profile',
+      6 => 'Items Catalogue',
+      7 => 'Product Categories',
+      8 => 'Warehouse Management',
+      9 => 'Units of Measure',
+      10 => 'Barcode Management',
+      11 => 'User Management',
+      12 => 'My Profile',
       _ => AppLocalizations.of(context)?.appName ?? 'Bokrah Accounting',
     };
   }
@@ -263,14 +260,13 @@ class _HomePageState extends State<HomePage> {
       3 => Icons.description_outlined,
       4 => Icons.account_tree_outlined,
       5 => Icons.analytics_outlined,
-      6 => Icons.style_outlined,
-      7 => Icons.inventory_2_outlined,
-      8 => Icons.category_outlined,
-      9 => Icons.warehouse_outlined,
-      10 => Icons.straighten_outlined,
-      11 => Icons.qr_code_outlined,
-      12 => Icons.manage_accounts_outlined,
-      13 => Icons.person_outline,
+      6 => Icons.inventory_2_outlined,
+      7 => Icons.category_outlined,
+      8 => Icons.warehouse_outlined,
+      9 => Icons.straighten_outlined,
+      10 => Icons.qr_code_outlined,
+      11 => Icons.manage_accounts_outlined,
+      12 => Icons.person_outline,
       _ => Icons.circle_outlined,
     };
   }
@@ -332,24 +328,19 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(BkSpace.lg),
         child: FinancialReportsPreview(controller: _accountingController),
       ),
-      // 6: Design Patterns Catalogue
-      SingleChildScrollView(
-        padding: const EdgeInsets.all(BkSpace.xl),
-        child: PatternsCatalogue(arabic: isArabic),
-      ),
-      // 7: Items
+      // 6: Items
       const ItemsPage(),
-      // 8: Categories
+      // 7: Categories
       const CategoriesPage(),
-      // 9: Warehouses
+      // 8: Warehouses
       const WarehousesPage(),
-      // 10: Units
+      // 9: Units
       const UnitsPage(),
-      // 11: Barcodes
+      // 10: Barcodes
       const BarcodesPage(),
-      // 12: Users
+      // 11: Users
       const UsersPage(),
-      // 13: Profile
+      // 12: Profile
       const ProfilePage(),
     ];
 
@@ -442,7 +433,7 @@ class _HomePageState extends State<HomePage> {
                           Text(
                             _packageInfo != null
                                 ? 'v${_packageInfo!.version}'
-                                : 'v3.3.0',
+                                : 'v3.4.0',
                             style: TextStyle(
                               fontSize: 11,
                               color: Theme.of(context)
@@ -555,54 +546,7 @@ class _HomePageState extends State<HomePage> {
                   child: Divider(height: 1),
                 ),
 
-                // 2. Design System & Patterns
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    isArabic ? "نظام التصميم والمختبر" : "Design & Playground",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.85),
-                    ),
-                  ),
-                ),
-                SidebarItem(
-                  icon: Icons.style_outlined,
-                  label: isArabic ? "أنماط التصميم" : "Design Patterns",
-                  isSelected: selectedIndex == 6,
-                  onTap: () {
-                    setState(() => selectedIndex = 6);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                SidebarItem(
-                  icon: Icons.science_outlined,
-                  label:
-                      isArabic ? "مختبر التخطيطات الكامل" : "Layout Playground",
-                  isSelected: false,
-                  color: Theme.of(context).colorScheme.primary,
-                  onTap: () {
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                    context.go('/playground');
-                  },
-                ),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Divider(height: 1),
-                ),
-
-                // 3. Inventory & Operations
+                // 2. Inventory & Operations
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -622,7 +566,7 @@ class _HomePageState extends State<HomePage> {
                 SidebarItem(
                   icon: Icons.inventory_2_outlined,
                   label: isArabic ? "العناصر والمخزون" : "Items & Stock",
-                  isSelected: selectedIndex == 7,
+                  isSelected: selectedIndex >= 6 && selectedIndex <= 10,
                   hasArrow: true,
                   isExpanded: isItemsExpanded,
                   onTap: () =>
@@ -632,6 +576,17 @@ class _HomePageState extends State<HomePage> {
                   SidebarItem(
                     icon: Icons.list_alt,
                     label: isArabic ? "قائمة العناصر" : "Items List",
+                    isSelected: selectedIndex == 6,
+                    onTap: () {
+                      setState(() => selectedIndex = 6);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.category_outlined,
+                    label: isArabic ? "فئات المنتجات" : "Categories",
                     isSelected: selectedIndex == 7,
                     onTap: () {
                       setState(() => selectedIndex = 7);
@@ -641,8 +596,8 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   SidebarItem(
-                    icon: Icons.category_outlined,
-                    label: isArabic ? "فئات المنتجات" : "Categories",
+                    icon: Icons.warehouse_outlined,
+                    label: isArabic ? "إدارة المستودعات" : "Warehouses",
                     isSelected: selectedIndex == 8,
                     onTap: () {
                       setState(() => selectedIndex = 8);
@@ -652,8 +607,8 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   SidebarItem(
-                    icon: Icons.warehouse_outlined,
-                    label: isArabic ? "إدارة المستودعات" : "Warehouses",
+                    icon: Icons.straighten,
+                    label: isArabic ? "وحدات القياس" : "Units",
                     isSelected: selectedIndex == 9,
                     onTap: () {
                       setState(() => selectedIndex = 9);
@@ -663,22 +618,11 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   SidebarItem(
-                    icon: Icons.straighten,
-                    label: isArabic ? "وحدات القياس" : "Units",
+                    icon: Icons.qr_code,
+                    label: isArabic ? "الباركودات" : "Barcodes",
                     isSelected: selectedIndex == 10,
                     onTap: () {
                       setState(() => selectedIndex = 10);
-                      if (isMobile) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                  SidebarItem(
-                    icon: Icons.qr_code,
-                    label: isArabic ? "الباركودات" : "Barcodes",
-                    isSelected: selectedIndex == 11,
-                    onTap: () {
-                      setState(() => selectedIndex = 11);
                       if (isMobile) {
                         Navigator.of(context).pop();
                       }
@@ -691,7 +635,7 @@ class _HomePageState extends State<HomePage> {
                   child: Divider(height: 1),
                 ),
 
-                // 4. System & Administration
+                // 3. System & Administration
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -711,7 +655,7 @@ class _HomePageState extends State<HomePage> {
                 SidebarItem(
                   icon: Icons.settings_outlined,
                   label: isArabic ? "الإعدادات والمستخدمين" : "Settings",
-                  isSelected: selectedIndex == 12 || selectedIndex == 13,
+                  isSelected: selectedIndex == 11 || selectedIndex == 12,
                   hasArrow: true,
                   isExpanded: isSettingsExpanded,
                   onTap: () => setState(
@@ -721,9 +665,9 @@ class _HomePageState extends State<HomePage> {
                   SidebarItem(
                     icon: Icons.manage_accounts_outlined,
                     label: isArabic ? "إدارة المستخدمين" : "Users Management",
-                    isSelected: selectedIndex == 12,
+                    isSelected: selectedIndex == 11,
                     onTap: () {
-                      setState(() => selectedIndex = 12);
+                      setState(() => selectedIndex = 11);
                       if (isMobile) {
                         Navigator.of(context).pop();
                       }
@@ -732,9 +676,9 @@ class _HomePageState extends State<HomePage> {
                   SidebarItem(
                     icon: Icons.person_outline,
                     label: isArabic ? "ملفي الشخصي" : "Profile",
-                    isSelected: selectedIndex == 13,
+                    isSelected: selectedIndex == 12,
                     onTap: () {
-                      setState(() => selectedIndex = 13);
+                      setState(() => selectedIndex = 12);
                       if (isMobile) {
                         Navigator.of(context).pop();
                       }
@@ -761,7 +705,7 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     _packageInfo != null
                         ? 'v${_packageInfo!.version}'
-                        : 'v3.3.0',
+                        : 'v3.4.0',
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context)
@@ -841,31 +785,6 @@ class _HomePageState extends State<HomePage> {
           // Actions
           Row(
             children: [
-              // Quick open playground button
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  visualDensity: VisualDensity.compact,
-                  side: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.4),
-                  ),
-                ),
-                icon: const Icon(Icons.science_outlined, size: 16),
-                label: Text(
-                  isArabic ? "مختبر التخطيطات" : "Playground",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                onPressed: () => context.go('/playground'),
-              ),
-              const SizedBox(width: 8),
-
               // Language & Theme Pill
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
@@ -1000,11 +919,6 @@ class _HomePageState extends State<HomePage> {
               ? AppBar(
                   title: Text(_pageTitle(selectedIndex, isArabic)),
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.science_outlined),
-                      tooltip: isArabic ? 'المختبر' : 'Playground',
-                      onPressed: () => context.go('/playground'),
-                    ),
                     IconButton(
                       tooltip: _themeTooltip(
                         context.watch<SettingsCubit>().state.bkThemeMode,

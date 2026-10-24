@@ -76,11 +76,18 @@ class AuthState extends Equatable {
   bool get isPhoneValid => selectedCountry.isValid(rawPhoneNumber);
 
   bool get canSubmitLogin {
-    if (isSubmitting) return false;
-    if (loginMethod == LoginMethod.email) {
+    if (isSubmitting) {
+      return false;
+    }
+    final id = email.trim();
+    if (id.isEmpty && rawPhoneNumber.isEmpty) {
+      return false;
+    }
+    if (id.contains('@')) {
       return isEmailValid && isPasswordValid;
     } else {
-      return isPhoneValid && isPasswordValid;
+      final phone = rawPhoneNumber.isNotEmpty ? rawPhoneNumber : id;
+      return phone.length >= 6 && isPasswordValid;
     }
   }
 

@@ -9,8 +9,6 @@ import 'package:bokrah/app/features/warehouses/presentation/pages/warehouses_pag
 import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
 import 'package:bokrah/app/features/units/presentation/pages/units_page.dart';
-import 'package:bokrah/app/features/accounting_playground/accounting.dart';
-import 'package:bokrah/app/features/design_patterns/design_patterns.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRoutes {
@@ -82,30 +80,6 @@ class AppRoutes {
             builder: (context, state) {
               final item = state.extra as ItemEntity?;
               return AddItemPage(item: item);
-            },
-          ),
-          GoRoute(
-            path: '/playground',
-            builder: (context, state) {
-              return const AccountingPlaygroundPage();
-            },
-          ),
-          GoRoute(
-            path: '/developer/accounting-playground',
-            builder: (context, state) {
-              return const AccountingPlaygroundPage();
-            },
-          ),
-          GoRoute(
-            path: '/patterns',
-            builder: (context, state) {
-              return const PatternsPage();
-            },
-          ),
-          GoRoute(
-            path: '/developer/design-patterns',
-            builder: (context, state) {
-              return const PatternsPage();
             },
           ),
           // GoRoute(

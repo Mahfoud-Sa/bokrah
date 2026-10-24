@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../config/theme.dart';
 import '../../initialzation_dependencies.dart';
 import 'data/datasources/auth_token_storage.dart';
 import 'data/services/auth_service.dart';
@@ -23,11 +22,11 @@ class LoginPage extends StatelessWidget {
       future: _resolveAuthService(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Scaffold(
-            backgroundColor: AppTheme.creamBackground,
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: Center(
               child: CircularProgressIndicator(
-                color: AppTheme.deepOrange,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           );
@@ -73,7 +72,7 @@ class _LoginPageContent extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.creamBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: BlocBuilder<AuthCubit, AuthState>(
             buildWhen: (previous, current) => previous.step != current.step,

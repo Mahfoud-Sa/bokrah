@@ -49,7 +49,7 @@ void main() {
   });
 
   group('Login Flow Widget Tests', () {
-    testWidgets('displays English heading, email field, password field, and Sign In button', (tester) async {
+    testWidgets('displays English heading, unified email/phone field, password field, and Sign In button', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -64,12 +64,11 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome! Hungry for something delicious?'), findsOneWidget);
-      expect(find.text('Sign in to order your favorite meals.'), findsOneWidget);
-      expect(find.text('Email'), findsWidgets);
+      expect(find.text('Bokrah Accounting'), findsOneWidget);
+      expect(find.text('Sign in to the Enterprise ERP Suite'), findsOneWidget);
+      expect(find.text('Email or Phone Number'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Phone Number'), findsOneWidget);
     });
 
     testWidgets('displays Arabic heading and RTL layout', (tester) async {
@@ -87,14 +86,14 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('مرحباً! هل أنت جائع لوجبة شهية؟'), findsOneWidget);
-      expect(find.text('سجّل الدخول لتطلب وجباتك المفضلة.'), findsOneWidget);
+      expect(find.text('بكرة للمحاسبة'), findsOneWidget);
+      expect(find.text('تسجيل الدخول إلى النظام المؤسسي المتكامل'), findsOneWidget);
       expect(find.text('تسجيل الدخول'), findsOneWidget);
-      expect(find.text('البريد الإلكتروني'), findsWidgets);
-      expect(find.text('رقم الهاتف'), findsOneWidget);
+      expect(find.text('البريد الإلكتروني أو رقم الهاتف'), findsOneWidget);
+      expect(find.text('كلمة المرور'), findsOneWidget);
     });
 
-    testWidgets('logs in using email and password', (tester) async {
+    testWidgets('logs in using email and password in unified field', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -123,7 +122,7 @@ void main() {
       expect(await authService.isAuthenticated(), isTrue);
     });
 
-    testWidgets('switches to phone tab, enters phone and password, and logs in', (tester) async {
+    testWidgets('logs in using phone number and password in unified field', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -138,16 +137,9 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Switch to Phone Number tab
-      await tester.tap(find.text('Phone Number'));
-      await tester.pumpAndSettle();
-
-      // Dial code should now be visible
-      expect(find.text('+966'), findsOneWidget);
-
-      // Enter phone and password
+      // Enter phone and password in unified field
       final textFields = find.byType(TextField);
-      await tester.enterText(textFields.at(0), '501234567');
+      await tester.enterText(textFields.at(0), '0501234567');
       await tester.enterText(textFields.at(1), 'password123');
       await tester.pump();
 

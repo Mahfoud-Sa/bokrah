@@ -1,15 +1,13 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:bokrah_design_system/bokrah_design_system.dart';
 import '../../../../config/l10n/app_localizations.dart';
-import '../../../../config/theme.dart';
-import '../../data/models/country_code_model.dart';
+import '../../../settings/presentation/cubits/settings_cubit.dart';
 import '../../data/models/otp_response_model.dart';
 import '../cubits/auth_cubit.dart';
 import '../cubits/auth_state.dart';
 import '../widgets/auth_button.dart';
-import '../widgets/country_code_picker_dialog.dart';
 import '../widgets/restaurant_header.dart';
 import '../widgets/terms_dialog.dart';
 
@@ -21,76 +19,68 @@ class PhoneInputView extends StatefulWidget {
 }
 
 class _PhoneInputViewState extends State<PhoneInputView> {
-  late TextEditingController _emailController;
-  late TextEditingController _phoneController;
+  late TextEditingController _identifierController;
   late TextEditingController _passwordController;
 
   @override
   void initState() {
     super.initState();
     final cubit = context.read<AuthCubit>();
-    _emailController = TextEditingController(text: cubit.state.email);
-    _phoneController = TextEditingController(text: cubit.state.rawPhoneNumber);
+    final initialId = cubit.state.email.isNotEmpty
+        ? cubit.state.email
+        : cubit.state.rawPhoneNumber;
+    _identifierController = TextEditingController(text: initialId);
     _passwordController = TextEditingController(text: cubit.state.password);
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _phoneController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _openCountryPicker(CountryCodeModel current) async {
-    final selected = await CountryCodePickerDialog.show(
-      context,
-      selectedCountry: current,
-    );
-    if (selected != null && mounted) {
-      context.read<AuthCubit>().setCountry(selected);
-    }
+  void _fillDemo(String id, String pass) {
+    _identifierController.text = id;
+    _passwordController.text = pass;
+    final cubit = context.read<AuthCubit>();
+    cubit.setIdentifier(id);
+    cubit.setPassword(pass);
   }
 
   void _showForgotPasswordDialog() {
-    final l10n = AppLocalizations.of(context)!;
+    final isArabic =
+        context.read<SettingsCubit>().state.locale.languageCode == 'ar';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.creamSurface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+          borderRadius: BorderRadius.circular(BkRadius.md),
         ),
         title: Row(
           children: [
-            const Icon(Icons.lock_reset, color: AppTheme.deepOrange, size: 26),
+            Icon(
+              Icons.lock_reset,
+              color: Theme.of(context).colorScheme.primary,
+              size: 26,
+            ),
             const SizedBox(width: 10),
             Text(
-              l10n.forgotPassword,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textDarkBrown,
-              ),
+              isArabic ? 'استعادة كلمة المرور' : 'Reset Password',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
           ],
         ),
         content: Text(
-          l10n.forgotPasswordNotice,
-          style: const TextStyle(
-            fontSize: 15,
-            color: AppTheme.textMediumBrown,
-            height: 1.4,
-          ),
+          isArabic
+              ? 'يرجى مراجعة مسؤول النظام لإعادة تعيين بيانات الحساب المؤسسي.'
+              : 'Please contact your enterprise system administrator to reset your account credentials.',
+          style: const TextStyle(fontSize: 14, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.deepOrange),
-            child: Text(
-              l10n.close,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: Text(isArabic ? 'إغلاق' : 'Close'),
           ),
         ],
       ),
@@ -114,14 +104,17 @@ class _PhoneInputViewState extends State<PhoneInputView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final theme = Theme.of(context);
 
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (_emailController.text != state.email) {
-          _emailController.text = state.email;
-        }
-        if (_phoneController.text != state.rawPhoneNumber) {
-          _phoneController.text = state.rawPhoneNumber;
+        final currentText = _identifierController.text;
+        final expected = state.email.isNotEmpty
+            ? state.email
+            : state.rawPhoneNumber;
+        if (expected.isNotEmpty && currentText != expected) {
+          _identifierController.text = expected;
         }
         if (_passwordController.text != state.password) {
           _passwordController.text = state.password;
@@ -131,342 +124,163 @@ class _PhoneInputViewState extends State<PhoneInputView> {
         final cubit = context.read<AuthCubit>();
         final hasError =
             state.errorMessage != null && state.errorMessage!.isNotEmpty;
-        final isEmailMode = state.loginMethod == LoginMethod.email;
+
+        final isEmailInput = _identifierController.text.contains('@');
+        final isPhoneInput = !_identifierController.text.contains('@') &&
+            _identifierController.text.trim().isNotEmpty;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Restaurant Header (Banner, Logo, Title, Subtitle, Language Switcher)
+                  // Bokrah Header (Branding, Logo, Language Switcher, Theme Mode Switcher)
                   const RestaurantHeader(),
 
                   const SizedBox(height: 28),
 
-                  // Method Toggle Tabs: Email & Password vs Phone & Password
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.creamInputFill,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.borderWarm),
-                    ),
-                    child: Row(
-                      children: [
-                        // Email Tab
-                        Expanded(
-                          child: InkWell(
-                            onTap: state.isSubmitting
-                                ? null
-                                : () => cubit.setLoginMethod(LoginMethod.email),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isEmailMode
-                                    ? AppTheme.creamSurface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: isEmailMode
-                                    ? const [
-                                        BoxShadow(
-                                          color: AppTheme.shadowWarm,
-                                          blurRadius: 6,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.email_outlined,
-                                    size: 18,
-                                    color: isEmailMode
-                                        ? AppTheme.deepOrange
-                                        : AppTheme.textMediumBrown,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      l10n.signInWithEmail,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: isEmailMode
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        color: isEmailMode
-                                            ? AppTheme.deepOrange
-                                            : AppTheme.textMediumBrown,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Phone Tab
-                        Expanded(
-                          child: InkWell(
-                            onTap: state.isSubmitting
-                                ? null
-                                : () => cubit.setLoginMethod(LoginMethod.phone),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: !isEmailMode
-                                    ? AppTheme.creamSurface
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: !isEmailMode
-                                    ? const [
-                                        BoxShadow(
-                                          color: AppTheme.shadowWarm,
-                                          blurRadius: 6,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.phone_iphone_outlined,
-                                    size: 18,
-                                    color: !isEmailMode
-                                        ? AppTheme.deepOrange
-                                        : AppTheme.textMediumBrown,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      l10n.signInWithPhone,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: !isEmailMode
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        color: !isEmailMode
-                                            ? AppTheme.deepOrange
-                                            : AppTheme.textMediumBrown,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Input Credentials Card
+                  // Credentials Form Card
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.creamSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(BkRadius.lg),
                       border: Border.all(
-                        color:
-                            hasError ? AppTheme.errorRed : AppTheme.borderWarm,
+                        color: hasError
+                            ? theme.colorScheme.error
+                            : theme.dividerColor.withValues(alpha: 0.2),
                         width: hasError ? 1.5 : 1.0,
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: AppTheme.shadowWarm,
-                          blurRadius: 16,
-                          offset: Offset(0, 4),
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (isEmailMode) ...[
-                          // Email Field Label
-                          Text(
-                            l10n.email,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textDarkBrown,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Email Input
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.creamInputFill,
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusInput),
-                              border: Border.all(color: AppTheme.borderWarm),
-                            ),
-                            child: TextField(
-                              controller: _emailController,
-                              enabled: !state.isSubmitting,
-                              keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textDarkBrown,
-                              ),
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.email_outlined,
-                                  color: AppTheme.textMediumBrown,
-                                ),
-                                hintText: l10n.emailHint,
-                                hintStyle: const TextStyle(
-                                  color: AppTheme.textMutedBrown,
-                                  fontSize: 15,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 14,
+                        // Unified Identifier Field Label
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                isArabic
+                                    ? 'البريد الإلكتروني أو رقم الهاتف'
+                                    : 'Email or Phone Number',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
-                              onChanged: (val) => cubit.setEmail(val),
                             ),
-                          ),
-                        ] else ...[
-                          // Phone Field Label
-                          Text(
-                            l10n.phoneNumber,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textDarkBrown,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
+                            if (isEmailInput)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isArabic ? 'بريد' : 'Email',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              )
+                            else if (isPhoneInput)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isArabic ? 'هاتف' : 'Phone',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
 
-                          // Combined Country Code + Phone Input
-                          Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.creamInputFill,
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusInput),
-                              border: Border.all(color: AppTheme.borderWarm),
-                            ),
-                            child: Row(
-                              children: [
-                                InkWell(
-                                  onTap: state.isSubmitting
-                                      ? null
-                                      : () => _openCountryPicker(
-                                            state.selectedCountry,
-                                          ),
-                                  borderRadius: const BorderRadius.horizontal(
-                                    left: Radius.circular(AppTheme.radiusInput),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 14,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          state.selectedCountry.flagEmoji,
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Directionality(
-                                          textDirection: TextDirection.ltr,
-                                          child: Text(
-                                            state.selectedCountry.dialCode,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppTheme.textDarkBrown,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        const Icon(
-                                          Icons.arrow_drop_down,
-                                          color: AppTheme.textMediumBrown,
-                                          size: 20,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: 1,
-                                  height: 28,
-                                  color: AppTheme.borderWarm,
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _phoneController,
-                                    enabled: !state.isSubmitting,
-                                    keyboardType: TextInputType.phone,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(
-                                        state.selectedCountry.maxLength + 1,
-                                      ),
-                                    ],
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.textDarkBrown,
-                                      letterSpacing: 0.5,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          state.selectedCountry.placeholder,
-                                      hintStyle: const TextStyle(
-                                        color: AppTheme.textMutedBrown,
-                                        fontSize: 15,
-                                      ),
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 14,
-                                      ),
-                                    ),
-                                    onChanged: (val) =>
-                                        cubit.setPhoneNumber(val),
-                                  ),
-                                ),
-                              ],
+                        // Unified Identifier Input
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(BkRadius.md),
+                            border: Border.all(
+                              color: theme.dividerColor.withValues(alpha: 0.25),
                             ),
                           ),
-                        ],
+                          child: TextField(
+                            controller: _identifierController,
+                            enabled: !state.isSubmitting,
+                            keyboardType: TextInputType.emailAddress,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                isEmailInput
+                                    ? Icons.email_outlined
+                                    : isPhoneInput
+                                        ? Icons.phone_iphone_outlined
+                                        : Icons.person_outline,
+                                color: theme.colorScheme.primary,
+                                size: 20,
+                              ),
+                              hintText: isArabic
+                                  ? 'name@bokrah.com أو 050xxxxxxx'
+                                  : 'name@bokrah.com or +96650xxxxxxx',
+                              hintStyle: TextStyle(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
+                                fontSize: 14,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
+                            ),
+                            onChanged: (val) => cubit.setIdentifier(val),
+                          ),
+                        ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
 
                         // Password Field Label
                         Text(
-                          l10n.password,
-                          style: const TextStyle(
-                            fontSize: 14,
+                          isArabic ? 'كلمة المرور' : 'Password',
+                          style: TextStyle(
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.textDarkBrown,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -474,39 +288,46 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                         // Password Input
                         Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.creamInputFill,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusInput),
-                            border: Border.all(color: AppTheme.borderWarm),
+                            color: theme.colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(BkRadius.md),
+                            border: Border.all(
+                              color: theme.dividerColor.withValues(alpha: 0.25),
+                            ),
                           ),
                           child: TextField(
                             controller: _passwordController,
                             enabled: !state.isSubmitting,
                             obscureText: !state.isPasswordVisible,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.textDarkBrown,
+                              color: theme.colorScheme.onSurface,
                             ),
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.lock_outline,
-                                color: AppTheme.textMediumBrown,
+                                color: theme.colorScheme.primary,
+                                size: 20,
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   state.isPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
-                                  color: AppTheme.textMediumBrown,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     cubit.togglePasswordVisibility(),
                               ),
-                              hintText: l10n.passwordHint,
-                              hintStyle: const TextStyle(
-                                color: AppTheme.textMutedBrown,
-                                fontSize: 15,
+                              hintText: isArabic
+                                  ? 'أدخل كلمة المرور (٦ أحرف على الأقل)'
+                                  : 'Enter password (min 6 characters)',
+                              hintStyle: TextStyle(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
+                                fontSize: 14,
                               ),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
@@ -529,14 +350,20 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                           child: TextButton(
                             onPressed: _showForgotPasswordDialog,
                             style: TextButton.styleFrom(
-                              foregroundColor: AppTheme.textMediumBrown,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 0,
+                              ),
                             ),
                             child: Text(
-                              l10n.forgotPassword,
-                              style: const TextStyle(
-                                fontSize: 13,
+                              isArabic
+                                  ? 'نسيت كلمة المرور؟'
+                                  : 'Forgot password?',
+                              style: TextStyle(
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary,
                               ),
                             ),
                           ),
@@ -544,31 +371,31 @@ class _PhoneInputViewState extends State<PhoneInputView> {
 
                         // Error message feedback
                         if (hasError) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 8,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.errorBackground,
-                              borderRadius: BorderRadius.circular(10),
+                              color: theme.colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(BkRadius.sm),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.error_outline,
-                                  color: AppTheme.errorRed,
-                                  size: 16,
+                                  color: theme.colorScheme.error,
+                                  size: 18,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _resolveErrorMessage(context, state),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: AppTheme.errorRed,
+                                      color: theme.colorScheme.error,
                                     ),
                                   ),
                                 ),
@@ -584,7 +411,7 @@ class _PhoneInputViewState extends State<PhoneInputView> {
 
                   // Sign In Primary Button
                   AuthButton(
-                    text: l10n.signIn,
+                    text: isArabic ? 'تسجيل الدخول' : 'Sign In',
                     icon: Icons.login_rounded,
                     isLoading: state.isSubmitting,
                     onPressed: state.canSubmitLogin
@@ -597,22 +424,91 @@ class _PhoneInputViewState extends State<PhoneInputView> {
 
                   const SizedBox(height: 20),
 
+                  // Quick Demo Credentials Selector
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(BkRadius.md),
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.bolt,
+                              size: 16,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              isArabic
+                                  ? 'حسابات تجريبية سريعة:'
+                                  : 'Quick Demo Accounts:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ActionChip(
+                              avatar: const Icon(Icons.email, size: 14),
+                              label: const Text('chef@bokrah.com'),
+                              onPressed: () => _fillDemo(
+                                'chef@bokrah.com',
+                                'password123',
+                              ),
+                            ),
+                            ActionChip(
+                              avatar: const Icon(Icons.phone, size: 14),
+                              label: const Text('0501234567'),
+                              onPressed: () => _fillDemo(
+                                '0501234567',
+                                'password123',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
                   // Terms of Service and Privacy Policy Link
                   Center(
                     child: RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textMediumBrown,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                           height: 1.45,
                         ),
                         children: [
-                          TextSpan(text: l10n.termsAndPrivacyPrefix),
                           TextSpan(
-                            text: l10n.termsOfService,
-                            style: const TextStyle(
-                              color: AppTheme.deepOrange,
+                            text: isArabic
+                                ? 'بتسجيل الدخول، فإنك توافق على '
+                                : 'By signing in, you agree to our ',
+                          ),
+                          TextSpan(
+                            text: isArabic
+                                ? 'شروط الخدمة'
+                                : l10n.termsOfService,
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w700,
                               decoration: TextDecoration.underline,
                             ),
@@ -622,11 +518,13 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                                     isPrivacy: false,
                                   ),
                           ),
-                          TextSpan(text: l10n.and),
+                          TextSpan(text: isArabic ? ' و ' : ' and '),
                           TextSpan(
-                            text: l10n.privacyPolicy,
-                            style: const TextStyle(
-                              color: AppTheme.deepOrange,
+                            text: isArabic
+                                ? 'سياسة الخصوصية'
+                                : l10n.privacyPolicy,
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w700,
                               decoration: TextDecoration.underline,
                             ),
@@ -640,44 +538,6 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Development Demo Note
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.creamInputFill,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.borderWarm),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          size: 18,
-                          color: AppTheme.deepOrange,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            l10n.demoCredentialsNote,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textMediumBrown,
-                              height: 1.35,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
