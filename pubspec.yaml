@@ -27,6 +27,8 @@ dependencies:
   flutter_bloc: ^8.1.6
   bloc: ^8.1.4
   equatable: ^2.0.5
+  bokrah_design_system:
+    path: ../bokrah-design-system/packages/flutter
 
 dev_dependencies:
   flutter_test:

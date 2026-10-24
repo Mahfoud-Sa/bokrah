@@ -9,26 +9,30 @@ import 'package:bokrah/app/features/warehouses/presentation/pages/warehouses_pag
 import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
 import 'package:bokrah/app/features/units/presentation/pages/units_page.dart';
+import 'package:bokrah/app/features/accounting_playground/accounting.dart';
+import 'package:bokrah/app/features/design_patterns/design_patterns.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRoutes {
   static final GoRouter routers = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/home',
     routes: <RouteBase>[
       GoRoute(
         path: '/',
         builder: (context, state) {
-          // if (!showOnBordingPages) {
-          //   return HomePage();
-          // } else {
-          return const LoginPage();
-          // }
+          return const HomePage();
         },
         routes: <RouteBase>[
           GoRoute(
             path: '/home',
             builder: (context, state) {
               return const HomePage();
+            },
+          ),
+          GoRoute(
+            path: '/login',
+            builder: (context, state) {
+              return const LoginPage();
             },
           ),
           GoRoute(
@@ -78,6 +82,30 @@ class AppRoutes {
             builder: (context, state) {
               final item = state.extra as ItemEntity?;
               return AddItemPage(item: item);
+            },
+          ),
+          GoRoute(
+            path: '/playground',
+            builder: (context, state) {
+              return const AccountingPlaygroundPage();
+            },
+          ),
+          GoRoute(
+            path: '/developer/accounting-playground',
+            builder: (context, state) {
+              return const AccountingPlaygroundPage();
+            },
+          ),
+          GoRoute(
+            path: '/patterns',
+            builder: (context, state) {
+              return const PatternsPage();
+            },
+          ),
+          GoRoute(
+            path: '/developer/design-patterns',
+            builder: (context, state) {
+              return const PatternsPage();
             },
           ),
           // GoRoute(

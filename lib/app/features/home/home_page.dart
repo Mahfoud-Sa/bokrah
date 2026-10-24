@@ -1,17 +1,26 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:bokrah_design_system/bokrah_design_system.dart';
+import 'package:bokrah/app/config/l10n/app_localizations.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/app_update_screen.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_state.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/dialogs/update_prompt_dialog.dart';
-import 'package:bokrah/app/features/home/main_content.dart';
-import 'package:bokrah/app/features/home/notification_page.dart';
-import 'package:bokrah/app/features/home/contact_page.dart';
-import 'package:bokrah/app/features/home/side_bar_item.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_cubit.dart';
-import 'package:bokrah/app/config/l10n/app_localizations.dart';
-import 'package:go_router/go_router.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:bokrah/app/features/settings/presentation/cubits/settings_state.dart';
+import 'package:bokrah/app/features/accounting_playground/accounting.dart';
+import 'package:bokrah/app/features/design_patterns/design_patterns.dart';
+import 'package:bokrah/app/features/items/presentation/pages/items_page.dart';
+import 'package:bokrah/app/features/items/presentation/pages/categories_page.dart';
+import 'package:bokrah/app/features/warehouses/presentation/pages/warehouses_page.dart';
+import 'package:bokrah/app/features/units/presentation/pages/units_page.dart';
+import 'package:bokrah/app/features/barcoders/presentation/pages/barcoders_page.dart';
+import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
+import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
+import 'package:bokrah/app/features/home/main_content.dart';
+import 'package:bokrah/app/features/home/side_bar_item.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,15 +32,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   PackageInfo? _packageInfo;
-  bool isItemsExpanded = false;
+  bool isItemsExpanded = true;
   bool isSettingsExpanded = false;
   bool _hasPromptedUpdateThisSession = false;
-
-  final List<Widget> pages = const [
-    DashboardPage(),
-    ContactsPage(),
-    NotificationsPage(),
-  ];
+  final PlaygroundController _accountingController = PlaygroundController();
 
   @override
   void initState() {
@@ -42,15 +46,25 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  @override
+  void dispose() {
+    _accountingController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initPackageInfo() async {
     final info = await PackageInfo.fromPlatform();
-    setState(() {
-      _packageInfo = info;
-    });
+    if (mounted) {
+      setState(() {
+        _packageInfo = info;
+      });
+    }
   }
 
   void _showVersionInfo() {
-    if (_packageInfo == null) return;
+    if (_packageInfo == null) {
+      return;
+    }
 
     showDialog(
       context: context,
@@ -90,14 +104,14 @@ class _HomePageState extends State<HomePage> {
           width: 80,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2E7D64),
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
         Expanded(
-          child: Text(value, style: const TextStyle(color: Colors.black87)),
+          child: Text(value),
         ),
       ],
     );
@@ -107,29 +121,32 @@ class _HomePageState extends State<HomePage> {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
+        final isArabic =
+            dialogContext.read<SettingsCubit>().state.locale.languageCode ==
+                'ar';
         return Directionality(
-          textDirection:
-              context.read<SettingsCubit>().state.locale.languageCode == 'ar'
-              ? TextDirection.rtl
-              : TextDirection.ltr,
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: AlertDialog(
-            title: Text(AppLocalizations.of(context)!.appName),
-            content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
+            title: Text(isArabic ? 'بكرة للمحاسبة' : 'Bokrah Accounting'),
+            content: Text(
+              isArabic
+                  ? 'هل أنت متأكد من رغبتك في تسجيل الخروج؟'
+                  : 'Are you sure you want to log out?',
+            ),
             actions: <Widget>[
               TextButton(
-                child: const Text('إلغاء'),
+                child: Text(isArabic ? 'إلغاء' : 'Cancel'),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                 },
               ),
               TextButton(
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('تسجيل الخروج'),
+                child: Text(isArabic ? 'تسجيل الخروج' : 'Log Out'),
                 onPressed: () {
-                  // TODO: Add actual logout logic here
-                  Navigator.of(context).pop(); // Close dialog
-                  Navigator.of(context).pop(); // Go back (simulate logout)
+                  Navigator.of(dialogContext).pop();
+                  context.go('/login');
                 },
               ),
             ],
@@ -140,6 +157,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildUserMenu({bool isMobile = false}) {
+    final isArabic =
+        context.watch<SettingsCubit>().state.locale.languageCode == 'ar';
     return PopupMenuButton<String>(
       offset: const Offset(0, 50),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -154,9 +173,8 @@ class _HomePageState extends State<HomePage> {
         ),
         child: CircleAvatar(
           radius: isMobile ? 14 : 16,
-          backgroundColor: Theme.of(
-            context,
-          ).colorScheme.primary.withValues(alpha: 0.1),
+          backgroundColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           child: Icon(
             Icons.person,
             size: isMobile ? 18 : 20,
@@ -166,7 +184,7 @@ class _HomePageState extends State<HomePage> {
       ),
       onSelected: (value) {
         if (value == 'profile') {
-          context.go('/profile');
+          setState(() => selectedIndex = 13);
         } else if (value == 'logout') {
           _showLogoutDialog();
         }
@@ -176,7 +194,7 @@ class _HomePageState extends State<HomePage> {
           value: 'profile',
           child: ListTile(
             leading: const Icon(Icons.person_outline),
-            title: Text(AppLocalizations.of(context)!.profile),
+            title: Text(isArabic ? 'الملف الشخصي' : 'My Profile'),
             contentPadding: EdgeInsets.zero,
             dense: true,
           ),
@@ -186,9 +204,9 @@ class _HomePageState extends State<HomePage> {
           value: 'logout',
           child: ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'تسجيل الخروج',
-              style: TextStyle(color: Colors.red),
+            title: Text(
+              isArabic ? 'تسجيل الخروج' : 'Log Out',
+              style: const TextStyle(color: Colors.red),
             ),
             contentPadding: EdgeInsets.zero,
             dense: true,
@@ -198,242 +216,739 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  String _pageTitle(int index, bool isArabic) {
+    if (isArabic) {
+      return switch (index) {
+        0 => 'لوحة التحكم المحاسبية',
+        1 => 'المبيعات والمعاملات',
+        2 => 'القيود اليومية',
+        3 => 'إدارة الفواتير',
+        4 => 'شجرة الحسابات',
+        5 => 'التقارير المالية',
+        6 => 'أنماط التصميم',
+        7 => 'قائمة العناصر',
+        8 => 'فئات المنتجات',
+        9 => 'إدارة المستودعات',
+        10 => 'وحدات القياس',
+        11 => 'إدارة الباركودات',
+        12 => 'إدارة المستخدمين',
+        13 => 'الملف الشخصي',
+        _ => AppLocalizations.of(context)?.appName ?? 'بكرة للمحاسبة',
+      };
+    }
+    return switch (index) {
+      0 => 'Accounting Dashboard',
+      1 => 'Sales & Transactions',
+      2 => 'Journal Entries',
+      3 => 'Invoice Management',
+      4 => 'Chart of Accounts',
+      5 => 'Financial Reports',
+      6 => 'Design Patterns Catalogue',
+      7 => 'Items Catalogue',
+      8 => 'Product Categories',
+      9 => 'Warehouse Management',
+      10 => 'Units of Measure',
+      11 => 'Barcode Management',
+      12 => 'User Management',
+      13 => 'My Profile',
+      _ => AppLocalizations.of(context)?.appName ?? 'Bokrah Accounting',
+    };
+  }
+
+  IconData _pageIcon(int index) {
+    return switch (index) {
+      0 => Icons.dashboard_outlined,
+      1 => Icons.receipt_long_outlined,
+      2 => Icons.edit_note_outlined,
+      3 => Icons.description_outlined,
+      4 => Icons.account_tree_outlined,
+      5 => Icons.analytics_outlined,
+      6 => Icons.style_outlined,
+      7 => Icons.inventory_2_outlined,
+      8 => Icons.category_outlined,
+      9 => Icons.warehouse_outlined,
+      10 => Icons.straighten_outlined,
+      11 => Icons.qr_code_outlined,
+      12 => Icons.manage_accounts_outlined,
+      13 => Icons.person_outline,
+      _ => Icons.circle_outlined,
+    };
+  }
+
+  IconData _themeIcon(BkThemeMode mode) {
+    return switch (mode) {
+      BkThemeMode.light => Icons.light_mode_outlined,
+      BkThemeMode.dark => Icons.dark_mode_outlined,
+      BkThemeMode.highContrast => Icons.contrast,
+    };
+  }
+
+  String _themeTooltip(BkThemeMode mode, bool isArabic) {
+    if (isArabic) {
+      return switch (mode) {
+        BkThemeMode.light => 'المظهر: فاتح',
+        BkThemeMode.dark => 'المظهر: داكن',
+        BkThemeMode.highContrast => 'المظهر: عالي التباين',
+      };
+    }
+    return switch (mode) {
+      BkThemeMode.light => 'Theme: Light',
+      BkThemeMode.dark => 'Theme: Dark',
+      BkThemeMode.highContrast => 'Theme: High Contrast',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isArabic =
+        context.watch<SettingsCubit>().state.locale.languageCode == 'ar';
+
+    final pages = [
+      // 0: Accounting Dashboard
+      DashboardContent(controller: _accountingController),
+      // 1: Transactions & Sales
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(BkSpace.lg),
+        child: TransactionListPreview(controller: _accountingController),
+      ),
+      // 2: Journal Entries
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(BkSpace.lg),
+        child: JournalEntryPreview(controller: _accountingController),
+      ),
+      // 3: Invoices
+      const SingleChildScrollView(
+        padding: EdgeInsets.all(BkSpace.lg),
+        child: InvoiceManagementPreview(),
+      ),
+      // 4: Chart of Accounts
+      const SingleChildScrollView(
+        padding: EdgeInsets.all(BkSpace.lg),
+        child: ChartOfAccountsPreview(),
+      ),
+      // 5: Financial Reports
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(BkSpace.lg),
+        child: FinancialReportsPreview(controller: _accountingController),
+      ),
+      // 6: Design Patterns Catalogue
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(BkSpace.xl),
+        child: PatternsCatalogue(arabic: isArabic),
+      ),
+      // 7: Items
+      const ItemsPage(),
+      // 8: Categories
+      const CategoriesPage(),
+      // 9: Warehouses
+      const WarehousesPage(),
+      // 10: Units
+      const UnitsPage(),
+      // 11: Barcodes
+      const BarcodesPage(),
+      // 12: Users
+      const UsersPage(),
+      // 13: Profile
+      const ProfilePage(),
+    ];
 
     Widget sidebarContent = Container(
-      width: 220,
-      color: const Color(0xFF2E7D64),
+      width: 260,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        border: Border(
+          right: isArabic
+              ? BorderSide.none
+              : BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                ),
+          left: isArabic
+              ? BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                )
+              : BorderSide.none,
+        ),
+      ),
       child: Column(
         children: [
-          const SizedBox(height: 40),
-          const Text(
-            "نجم التقنية",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          // Brand Logo Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isArabic ? "بكرة للمحاسبة" : "Bokrah Suite",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.2,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isArabic ? "المؤسسات" : "Enterprise",
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _packageInfo != null
+                                ? 'v${_packageInfo!.version}'
+                                : 'v3.3.0',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 30),
-          SidebarItem(
-            icon: Icons.space_dashboard,
-            label: AppLocalizations.of(context)!.appName,
-            isSelected: selectedIndex == 0,
-            onTap: () => setState(() => selectedIndex = 0),
-          ),
-          SidebarItem(
-            icon: Icons.people,
-            label: "المبيعات",
-            isSelected: selectedIndex == 1,
-            onTap: () => setState(() => selectedIndex = 1),
-          ),
-          SidebarItem(
-            icon: Icons.notifications,
-            label: "القيود",
-            isSelected: selectedIndex == 2,
-            onTap: () => setState(() => selectedIndex = 2),
-          ),
-          SidebarItem(
-            icon: Icons.inventory_2,
-            label: AppLocalizations.of(context)!.items,
-            isSelected: false,
-            hasArrow: true,
-            isExpanded: isItemsExpanded,
-            onTap: () => setState(() => isItemsExpanded = !isItemsExpanded),
-          ),
-          if (isItemsExpanded) ...[
-            SidebarItem(
-              icon: Icons.list_alt,
-              label: "قائمة العناصر",
-              isSelected: false,
-              onTap: () => context.go('/items'),
+          const Divider(height: 1),
+
+          // Scrollable navigation items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                // 1. Accounting & Finance
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    isArabic ? "المحاسبة والمالية" : "Accounting & Finance",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                SidebarItem(
+                  icon: Icons.dashboard_outlined,
+                  label: isArabic ? "لوحة التحكم" : "Dashboard",
+                  isSelected: selectedIndex == 0,
+                  onTap: () {
+                    setState(() => selectedIndex = 0);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.receipt_long_outlined,
+                  label: isArabic ? "المبيعات والمعاملات" : "Transactions",
+                  isSelected: selectedIndex == 1,
+                  onTap: () {
+                    setState(() => selectedIndex = 1);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.edit_note_outlined,
+                  label: isArabic ? "القيود اليومية" : "Journal Entries",
+                  isSelected: selectedIndex == 2,
+                  onTap: () {
+                    setState(() => selectedIndex = 2);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.description_outlined,
+                  label: isArabic ? "إدارة الفواتير" : "Invoices",
+                  isSelected: selectedIndex == 3,
+                  onTap: () {
+                    setState(() => selectedIndex = 3);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.account_tree_outlined,
+                  label: isArabic ? "شجرة الحسابات" : "Chart of Accounts",
+                  isSelected: selectedIndex == 4,
+                  onTap: () {
+                    setState(() => selectedIndex = 4);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.analytics_outlined,
+                  label: isArabic ? "التقارير المالية" : "Financial Reports",
+                  isSelected: selectedIndex == 5,
+                  onTap: () {
+                    setState(() => selectedIndex = 5);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Divider(height: 1),
+                ),
+
+                // 2. Design System & Patterns
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    isArabic ? "نظام التصميم والمختبر" : "Design & Playground",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                SidebarItem(
+                  icon: Icons.style_outlined,
+                  label: isArabic ? "أنماط التصميم" : "Design Patterns",
+                  isSelected: selectedIndex == 6,
+                  onTap: () {
+                    setState(() => selectedIndex = 6);
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                SidebarItem(
+                  icon: Icons.science_outlined,
+                  label:
+                      isArabic ? "مختبر التخطيطات الكامل" : "Layout Playground",
+                  isSelected: false,
+                  color: Theme.of(context).colorScheme.primary,
+                  onTap: () {
+                    if (isMobile) {
+                      Navigator.of(context).pop();
+                    }
+                    context.go('/playground');
+                  },
+                ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Divider(height: 1),
+                ),
+
+                // 3. Inventory & Operations
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    isArabic ? "المخزون والعمليات" : "Inventory & Operations",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                SidebarItem(
+                  icon: Icons.inventory_2_outlined,
+                  label: isArabic ? "العناصر والمخزون" : "Items & Stock",
+                  isSelected: selectedIndex == 7,
+                  hasArrow: true,
+                  isExpanded: isItemsExpanded,
+                  onTap: () =>
+                      setState(() => isItemsExpanded = !isItemsExpanded),
+                ),
+                if (isItemsExpanded) ...[
+                  SidebarItem(
+                    icon: Icons.list_alt,
+                    label: isArabic ? "قائمة العناصر" : "Items List",
+                    isSelected: selectedIndex == 7,
+                    onTap: () {
+                      setState(() => selectedIndex = 7);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.category_outlined,
+                    label: isArabic ? "فئات المنتجات" : "Categories",
+                    isSelected: selectedIndex == 8,
+                    onTap: () {
+                      setState(() => selectedIndex = 8);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.warehouse_outlined,
+                    label: isArabic ? "إدارة المستودعات" : "Warehouses",
+                    isSelected: selectedIndex == 9,
+                    onTap: () {
+                      setState(() => selectedIndex = 9);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.straighten,
+                    label: isArabic ? "وحدات القياس" : "Units",
+                    isSelected: selectedIndex == 10,
+                    onTap: () {
+                      setState(() => selectedIndex = 10);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.qr_code,
+                    label: isArabic ? "الباركودات" : "Barcodes",
+                    isSelected: selectedIndex == 11,
+                    onTap: () {
+                      setState(() => selectedIndex = 11);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ],
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Divider(height: 1),
+                ),
+
+                // 4. System & Administration
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    isArabic ? "النظام والإدارة" : "System & Settings",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                SidebarItem(
+                  icon: Icons.settings_outlined,
+                  label: isArabic ? "الإعدادات والمستخدمين" : "Settings",
+                  isSelected: selectedIndex == 12 || selectedIndex == 13,
+                  hasArrow: true,
+                  isExpanded: isSettingsExpanded,
+                  onTap: () => setState(
+                      () => isSettingsExpanded = !isSettingsExpanded),
+                ),
+                if (isSettingsExpanded) ...[
+                  SidebarItem(
+                    icon: Icons.manage_accounts_outlined,
+                    label: isArabic ? "إدارة المستخدمين" : "Users Management",
+                    isSelected: selectedIndex == 12,
+                    onTap: () {
+                      setState(() => selectedIndex = 12);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.person_outline,
+                    label: isArabic ? "ملفي الشخصي" : "Profile",
+                    isSelected: selectedIndex == 13,
+                    onTap: () {
+                      setState(() => selectedIndex = 13);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ],
+              ],
             ),
-            SidebarItem(
-              icon: Icons.qr_code,
-              label: "الباركودات",
-              isSelected: false,
-              onTap: () => context.go('/barcodes'),
-            ),
-            SidebarItem(
-              icon: Icons.category,
-              label: "الفئات",
-              isSelected: false,
-              onTap: () => context.go('/categories'),
-            ),
-            SidebarItem(
-              icon: Icons.straighten,
-              label: AppLocalizations.of(context)!.units,
-              isSelected: false,
-              onTap: () => context.go('/units'),
-            ),
-          ],
-          SidebarItem(
-            icon: Icons.warehouse,
-            label: "المستودعات",
-            isSelected: false,
-            onTap: () => context.go('/warehouses'),
           ),
-          SidebarItem(
-            icon: Icons.settings,
-            label: AppLocalizations.of(context)!.settings,
-            isSelected: false,
-            hasArrow: true,
-            isExpanded: isSettingsExpanded,
-            onTap: () {
-              setState(() {
-                isSettingsExpanded = !isSettingsExpanded;
-              });
-            },
+
+          // Version footer
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (_packageInfo != null) {
+                      _showVersionInfo();
+                    }
+                  },
+                  child: Text(
+                    _packageInfo != null
+                        ? 'v${_packageInfo!.version}'
+                        : 'v3.3.0',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                Text(
+                  isArabic ? 'بكرة © 2026' : 'Bokrah © 2026',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
           ),
-          if (isSettingsExpanded) ...[
-            SidebarItem(
-              icon: Icons.manage_accounts,
-              label: "إدارة المستخدمين",
-              isSelected: false,
-              onTap: () => context.go('/users'),
-            ),
-            SidebarItem(
-              icon: Icons.person_outline,
-              label: "ملفي الشخصي",
-              isSelected: false,
-              onTap: () => context.go('/profile'),
-            ),
-          ],
         ],
       ),
     );
 
     Widget topBar = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
           ),
-        ],
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            selectedIndex == 0
-                ? AppLocalizations.of(context)!.appName
-                : selectedIndex == 1
-                ? AppLocalizations.of(context)!.items
-                : AppLocalizations.of(context)!.units,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+          // Breadcrumb & Page title
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _pageIcon(selectedIndex),
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic ? "بكرة / " : "Bokrah / ",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.45),
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    _pageTitle(selectedIndex, isArabic),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: 12),
 
-          // Settings & Profile Actions
+          // Actions
           Row(
             children: [
-              // Settings Pill (Language & Theme)
+              // Quick open playground button
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  visualDensity: VisualDensity.compact,
+                  side: BorderSide(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.4),
+                  ),
+                ),
+                icon: const Icon(Icons.science_outlined, size: 16),
+                label: Text(
+                  isArabic ? "مختبر التخطيطات" : "Playground",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onPressed: () => context.go('/playground'),
+              ),
+              const SizedBox(width: 8),
+
+              // Language & Theme Pill
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.08),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.12),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.15),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Language Switcher (Text based)
                     InkWell(
                       onTap: () =>
                           context.read<SettingsCubit>().toggleLanguage(),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
+                          horizontal: 10,
+                          vertical: 4,
                         ),
                         child: Text(
-                          context
-                                      .read<SettingsCubit>()
-                                      .state
-                                      .locale
-                                      .languageCode ==
-                                  'ar'
-                              ? 'EN'
-                              : 'AR',
+                          isArabic ? 'EN' : 'العربية',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                            fontSize: 12,
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    // Vertical Separator
                     Container(
                       width: 1,
-                      height: 20,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.15),
+                      height: 16,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.15),
                     ),
-                    const SizedBox(width: 4),
-                    // Theme Switcher
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      tooltip: _themeTooltip(
+                        context.watch<SettingsCubit>().state.bkThemeMode,
+                        isArabic,
                       ),
                       icon: Icon(
-                        context.read<SettingsCubit>().state.themeMode ==
-                                ThemeMode.dark
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
-                        size: 20,
+                        _themeIcon(
+                          context.watch<SettingsCubit>().state.bkThemeMode,
+                        ),
+                        size: 18,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       onPressed: () {
-                        final newMode =
-                            context.read<SettingsCubit>().state.themeMode ==
-                                ThemeMode.dark
-                            ? ThemeMode.light
-                            : ThemeMode.dark;
-                        context.read<SettingsCubit>().updateThemeMode(newMode);
+                        context.read<SettingsCubit>().cycleThemeMode();
                       },
                     ),
                   ],
                 ),
               ),
 
-              // User Menu
+              const SizedBox(width: 8),
               _buildUserMenu(),
-
               const SizedBox(width: 4),
+
               BlocBuilder<AppUpdateCubit, AppUpdateState>(
                 builder: (context, updateState) {
                   return Stack(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.notifications_outlined, size: 28),
+                        icon:
+                            const Icon(Icons.notifications_outlined, size: 24),
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -479,519 +994,93 @@ class _HomePageState extends State<HomePage> {
         }
       },
       child: Directionality(
-        textDirection:
-            context.read<SettingsCubit>().state.locale.languageCode == 'ar'
-            ? TextDirection.rtl
-            : TextDirection.ltr,
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         child: Scaffold(
-        appBar: isMobile
-            ? AppBar(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black87,
-                elevation: 1,
-                title: Text(
-                  selectedIndex == 0
-                      ? "لوحة التحكم"
-                      : selectedIndex == 1
-                      ? "المبيعات"
-                      : "القيود",
-                ),
-                actions: [
-                  // Settings Pill (Language & Theme) for Mobile
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
+          appBar: isMobile
+              ? AppBar(
+                  title: Text(_pageTitle(selectedIndex, isArabic)),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.science_outlined),
+                      tooltip: isArabic ? 'المختبر' : 'Playground',
+                      onPressed: () => context.go('/playground'),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          onTap: () =>
-                              context.read<SettingsCubit>().toggleLanguage(),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Text(
-                              context
-                                          .read<SettingsCubit>()
-                                          .state
-                                          .locale
-                                          .languageCode ==
-                                      'ar'
-                                  ? 'EN'
-                                  : 'AR',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                          icon: Icon(
-                            context.read<SettingsCubit>().state.themeMode ==
-                                    ThemeMode.dark
-                                ? Icons.light_mode_outlined
-                                : Icons.dark_mode_outlined,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          onPressed: () {
-                            final newMode =
-                                context.read<SettingsCubit>().state.themeMode ==
-                                    ThemeMode.dark
-                                ? ThemeMode.light
-                                : ThemeMode.dark;
-                            context.read<SettingsCubit>().updateThemeMode(
-                              newMode,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  // User Menu for Mobile
-                  _buildUserMenu(isMobile: true),
-                  const SizedBox(width: 4),
-                  BlocBuilder<AppUpdateCubit, AppUpdateState>(
-                    builder: (context, updateState) {
-                      return Stack(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_outlined, size: 24),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const AppUpdateScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          if (updateState.hasUnskippedUpdate)
-                            Positioned(
-                              right: 6,
-                              top: 6,
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              )
-            : null,
-        drawer: isMobile
-            ? Drawer(
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF153B2E), Color(0xFF2E7D64)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                    IconButton(
+                      tooltip: _themeTooltip(
+                        context.watch<SettingsCubit>().state.bkThemeMode,
+                        isArabic,
                       ),
+                      icon: Icon(
+                        _themeIcon(
+                          context.watch<SettingsCubit>().state.bkThemeMode,
+                        ),
+                      ),
+                      onPressed: () {
+                        context.read<SettingsCubit>().cycleThemeMode();
+                      },
                     ),
-                    child: SafeArea(
+                    _buildUserMenu(isMobile: true),
+                    BlocBuilder<AppUpdateCubit, AppUpdateState>(
+                      builder: (context, updateState) {
+                        return Stack(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.notifications_outlined,
+                                  size: 22),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AppUpdateScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            if (updateState.hasUnskippedUpdate)
+                              Positioned(
+                                right: 6,
+                                top: 6,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                )
+              : null,
+          drawer: isMobile
+              ? Drawer(
+                  child: SafeArea(
+                    child: sidebarContent,
+                  ),
+                )
+              : null,
+          body: isMobile
+              ? pages[selectedIndex]
+              : Row(
+                  children: [
+                    sidebarContent,
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          InkWell(
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.go('/profile');
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 20,
-                              ),
-                              child: Row(
-                                children: [
-                                  const CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: Colors.white24,
-                                    child: Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                      size: 30,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: const [
-                                        Text(
-                                          'عبدالله سالم بن زقر',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'مرحبا بك',
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const Divider(color: Colors.white24, height: 1),
-                          Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              children: [
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.space_dashboard,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  title: const Text(
-                                    'لوحة التحكم',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  selected: selectedIndex == 0,
-                                  selectedTileColor: Colors.white24,
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    setState(() => selectedIndex = 0);
-                                  },
-                                ),
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.people,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  title: const Text(
-                                    'المبيعات',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  selected: selectedIndex == 1,
-                                  selectedTileColor: Colors.white24,
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    setState(() => selectedIndex = 1);
-                                  },
-                                ),
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.notifications,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  title: const Text(
-                                    'القيود',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  selected: selectedIndex == 2,
-                                  selectedTileColor: Colors.white24,
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    setState(() => selectedIndex = 2);
-                                  },
-                                ),
-                                Theme(
-                                  data: Theme.of(
-                                    context,
-                                  ).copyWith(dividerColor: Colors.transparent),
-                                  child: ExpansionTile(
-                                    leading: const Icon(
-                                      Icons.inventory_2,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
-                                    title: const Text(
-                                      'العناصر',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    trailing: const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Colors.white70,
-                                    ),
-                                    childrenPadding: const EdgeInsets.only(
-                                      right: 20,
-                                    ),
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.list_alt,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'قائمة العناصر',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/items');
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.qr_code,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'الباركودات',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/barcodes');
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.category,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'الفئات',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/categories');
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.straighten,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'الوحدات',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/units');
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                ListTile(
-                                  leading: const Icon(
-                                    Icons.warehouse,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  title: const Text(
-                                    'المستودعات',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    context.go('/warehouses');
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(color: Colors.white24),
-                                Theme(
-                                  data: Theme.of(
-                                    context,
-                                  ).copyWith(dividerColor: Colors.transparent),
-                                  child: ExpansionTile(
-                                    leading: const Icon(
-                                      Icons.settings,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
-                                    title: const Text(
-                                      'الإعدادات',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    trailing: const Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Colors.white70,
-                                    ),
-                                    childrenPadding: const EdgeInsets.only(
-                                      right: 20,
-                                    ),
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.manage_accounts,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'إدارة المستخدمين',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/users');
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.person_outline,
-                                          color: Colors.white70,
-                                          size: 24,
-                                        ),
-                                        title: const Text(
-                                          'ملفي الشخصي',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.of(context).pop();
-                                          context.go('/profile');
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(color: Colors.white24),
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    if (_packageInfo != null) {
-                                      _showVersionInfo();
-                                    }
-                                  },
-                                  child: Text(
-                                    _packageInfo != null
-                                        ? 'v${_packageInfo!.version}+${_packageInfo!.buildNumber}'
-                                        : 'v...',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      decoration: TextDecoration.underline,
-                                    ),
-                                  ),
-                                ),
-                                const Text(
-                                  'حقوق النشر ©',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          ),
+                          topBar,
+                          Expanded(child: pages[selectedIndex]),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              )
-            : null,
-        body: isMobile
-            ? Column(
-                children: [
-                  // top bar is provided by AppBar on mobile
-                  Expanded(child: pages[selectedIndex]),
-                ],
-              )
-            : Row(
-                children: [
-                  // desktop sidebar
-                  sidebarContent,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top bar
-                        topBar,
-                        // Dynamic page
-                        Expanded(child: pages[selectedIndex]),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        ),
       ),
-    ),
-  );
-}
-}
-
-// Pages
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return DashboardContent(); // moved out
+    );
   }
 }

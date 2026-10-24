@@ -7,19 +7,48 @@ class SettingsCubit extends Cubit<SettingsState> {
   final SettingsLocalDataSource localDataSource;
 
   SettingsCubit({required this.localDataSource})
-    : super(SettingsState.initial()) {
+      : super(SettingsState.initial()) {
     _loadSettings();
   }
 
   void _loadSettings() {
-    final themeMode = localDataSource.getThemeMode();
+    final bkTheme = localDataSource.getBkThemeMode();
+    final themeMode = switch (bkTheme) {
+      BkThemeMode.dark => ThemeMode.dark,
+      _ => ThemeMode.light,
+    };
     final languageCode = localDataSource.getLanguageCode();
-    emit(SettingsState(themeMode: themeMode, locale: Locale(languageCode)));
+    emit(SettingsState(
+      themeMode: themeMode,
+      bkThemeMode: bkTheme,
+      locale: Locale(languageCode),
+    ));
   }
 
   Future<void> updateThemeMode(ThemeMode themeMode) async {
-    await localDataSource.cacheThemeMode(themeMode);
-    emit(state.copyWith(themeMode: themeMode));
+    final bkMode = themeMode == ThemeMode.dark
+        ? BkThemeMode.dark
+        : BkThemeMode.light;
+    await localDataSource.cacheBkThemeMode(bkMode);
+    emit(state.copyWith(themeMode: themeMode, bkThemeMode: bkMode));
+  }
+
+  Future<void> updateBkThemeMode(BkThemeMode mode) async {
+    await localDataSource.cacheBkThemeMode(mode);
+    final themeMode = switch (mode) {
+      BkThemeMode.dark => ThemeMode.dark,
+      _ => ThemeMode.light,
+    };
+    emit(state.copyWith(themeMode: themeMode, bkThemeMode: mode));
+  }
+
+  void cycleThemeMode() {
+    final next = switch (state.bkThemeMode) {
+      BkThemeMode.light => BkThemeMode.dark,
+      BkThemeMode.dark => BkThemeMode.highContrast,
+      BkThemeMode.highContrast => BkThemeMode.light,
+    };
+    updateBkThemeMode(next);
   }
 
   Future<void> updateLanguageCode(String languageCode) async {

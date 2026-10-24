@@ -1,5 +1,4 @@
 import 'package:bokrah/app/config/routes.dart';
-import 'package:bokrah/app/config/theme.dart';
 import 'package:bokrah/app/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_cubit.dart';
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_state.dart';
@@ -10,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bokrah_design_system/bokrah_design_system.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,27 +44,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
+        final isArabic = state.locale.languageCode == 'ar';
+        final light = state.isHighContrast
+            ? BkTheme.highContrast(arabic: isArabic)
+            : BkTheme.light(arabic: isArabic);
+        final dark = state.isHighContrast
+            ? BkTheme.highContrast(arabic: isArabic)
+            : BkTheme.dark(arabic: isArabic);
+
         return MaterialApp.router(
           debugShowMaterialGrid: false,
           title: packageInfo.appName,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppTheme.deepOrange,
-              primary: AppTheme.deepOrange,
-              surface: AppTheme.creamBackground,
-            ),
-            scaffoldBackgroundColor: AppTheme.creamBackground,
-            useMaterial3: true,
-            brightness: Brightness.light,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppTheme.deepOrange,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-            brightness: Brightness.dark,
-          ),
+          theme: light,
+          darkTheme: dark,
+          highContrastTheme: BkTheme.highContrast(arabic: isArabic),
+          highContrastDarkTheme: BkTheme.highContrast(arabic: isArabic),
           themeMode: state.themeMode,
           locale: state.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,

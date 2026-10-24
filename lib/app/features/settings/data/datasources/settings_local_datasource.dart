@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../presentation/cubits/settings_state.dart';
 
 class SettingsLocalDataSource {
   static const String _themeKey = 'theme_mode';
@@ -13,12 +14,26 @@ class SettingsLocalDataSource {
     await sharedPreferences.setString(_themeKey, themeMode.name);
   }
 
+  Future<void> cacheBkThemeMode(BkThemeMode mode) async {
+    await sharedPreferences.setString(_themeKey, mode.name);
+  }
+
+  BkThemeMode getBkThemeMode() {
+    final themeName = sharedPreferences.getString(_themeKey);
+    return switch (themeName) {
+      'dark' => BkThemeMode.dark,
+      'highContrast' => BkThemeMode.highContrast,
+      _ => BkThemeMode.light,
+    };
+  }
+
   ThemeMode getThemeMode() {
     final themeName = sharedPreferences.getString(_themeKey);
-    return ThemeMode.values.firstWhere(
-      (e) => e.name == themeName,
-      orElse: () => ThemeMode.system,
-    );
+    return switch (themeName) {
+      'dark' => ThemeMode.dark,
+      'light' => ThemeMode.light,
+      _ => ThemeMode.light,
+    };
   }
 
   Future<void> cacheLanguageCode(String languageCode) async {
