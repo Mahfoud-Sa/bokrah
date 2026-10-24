@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_version:
-        description: 'Release tag version (e.g. v3.3.0 or 3.3.0)'
+        description: 'Release tag version (e.g. v3.4.0 or 3.4.0)'
         required: true
-        default: 'v3.3.0'
+        default: 'v3.4.0'
         type: string
 
 # Grant write permissions for creating GitHub Releases
@@ -24,6 +24,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout bokrah-design-system
+        shell: pwsh
+        run: |
+          git clone --depth 1 https://github.com/Mahfoud-Sa/bokrah-design-system.git ../bokrah-design-system
+
       - name: Resolve Release Version
         id: version_info
         shell: pwsh
@@ -33,7 +38,7 @@ jobs:
           } elseif ('${{ github.ref_name }}' -ne '') {
             $raw = '${{ github.ref_name }}'.Trim()
           } else {
-            $raw = 'v3.3.0'
+            $raw = 'v3.4.0'
           }
 
           $clean = $raw -replace '^v', ''
