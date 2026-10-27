@@ -20,6 +20,7 @@ import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
 import 'package:bokrah/app/features/home/main_content.dart';
 import 'package:bokrah/app/features/home/side_bar_item.dart';
+import 'package:bokrah/app/features/users/data/entities/user_entity.dart';
 import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart';
 import 'package:bokrah/app/features/users/presentation/cubits/session_state.dart';
 
@@ -182,17 +183,18 @@ class _HomePageState extends State<HomePage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                operator.role.displayName,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              const SizedBox(height: 2),
+              BkBadge(
+                label: operator.role.displayName,
+                tone: operator.role == OperatorRole.admin
+                    ? BkTone.warning
+                    : operator.role == OperatorRole.accountant
+                        ? BkTone.info
+                        : BkTone.success,
               ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: BkSpace.sm),
         ],
         PopupMenuButton<String>(
           offset: const Offset(0, 50),

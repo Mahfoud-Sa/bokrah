@@ -1,5 +1,6 @@
 import 'package:bokrah/app/features/users/data/entities/user_entity.dart';
 import 'package:bokrah/app/features/users/data/services/users_service.dart';
+import 'package:bokrah_design_system/bokrah_design_system.dart';
 import 'package:flutter/material.dart';
 
 class UsersPage extends StatefulWidget {
@@ -175,11 +176,14 @@ class _UsersPageState extends State<UsersPage> {
                 ),
               ),
               actions: [
-                TextButton(
+                BkButton(
+                  label: 'إلغاء',
+                  variant: BkButtonVariant.secondary,
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('إلغاء'),
                 ),
-                ElevatedButton(
+                BkButton(
+                  label: isEditing ? 'تحديث' : 'حفظ',
+                  variant: BkButtonVariant.primary,
                   onPressed: () async {
                     if (formKey.currentState!.validate()) {
                       final newUser = UserEntity(
@@ -199,17 +203,12 @@ class _UsersPageState extends State<UsersPage> {
                           ? await _usersService.updateUser(newUser)
                           : await _usersService.saveUser(newUser);
 
-                      if (success) {
+                      if (context.mounted && success) {
                         Navigator.pop(context);
                         _loadUsers();
                       }
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D64),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(isEditing ? 'تحديث' : 'حفظ'),
                 ),
               ],
             ),
@@ -315,110 +314,89 @@ class _UsersPageState extends State<UsersPage> {
                 itemCount: _users.length,
                 itemBuilder: (context, index) {
                   final user = _users[index];
-                  return Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: user.isActive
-                            ? const Color(0xFF2E7D64)
-                            : Colors.grey,
-                        child: const Icon(Icons.person, color: Colors.white),
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              user.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: user.role == OperatorRole.admin
-                                  ? Colors.amber.withValues(alpha: 0.15)
-                                  : user.role == OperatorRole.accountant
-                                      ? Colors.teal.withValues(alpha: 0.15)
-                                      : Colors.blue.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              user.role.displayName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: user.role == OperatorRole.admin
-                                    ? Colors.amber[900]
-                                    : user.role == OperatorRole.accountant
-                                        ? Colors.teal[800]
-                                        : Colors.blue[800],
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: BkSpace.sm),
+                    child: BkCard(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: user.isActive
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                          child: const Icon(Icons.person, color: Colors.white),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                user.name,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(user.email),
-                          if (user.phoneNumber != null &&
-                              user.phoneNumber!.isNotEmpty)
-                            Text(
-                              user.phoneNumber!,
-                              style: const TextStyle(fontSize: 12),
+                            BkBadge(
+                              label: user.role.displayName,
+                              tone: user.role == OperatorRole.admin
+                                  ? BkTone.warning
+                                  : user.role == OperatorRole.accountant
+                                      ? BkTone.info
+                                      : BkTone.success,
                             ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _showAddEditDialog(user: user),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('حذف مستخدم'),
-                                  content: const Text(
-                                    'هل أنت متأكد من حذف هذا المستخدم؟',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('إلغاء'),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(user.email),
+                            if (user.phoneNumber != null &&
+                                user.phoneNumber!.isNotEmpty)
+                              Text(
+                                user.phoneNumber!,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showAddEditDialog(user: user),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('حذف مستخدم'),
+                                    content: const Text(
+                                      'هل أنت متأكد من حذف هذا المستخدم؟',
                                     ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text(
-                                        'حذف',
-                                        style: TextStyle(color: Colors.red),
+                                    actions: [
+                                      BkButton(
+                                        label: 'إلغاء',
+                                        variant: BkButtonVariant.secondary,
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                await _usersService.deleteUser(user.id!);
-                                _loadUsers();
-                              }
-                            },
-                          ),
-                        ],
+                                      BkButton(
+                                        label: 'حذف',
+                                        variant: BkButtonVariant.danger,
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await _usersService.deleteUser(user.id!);
+                                  _loadUsers();
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -426,7 +404,7 @@ class _UsersPageState extends State<UsersPage> {
               ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showAddEditDialog(),
-          backgroundColor: const Color(0xFF2E7D64),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           child: const Icon(Icons.person_add, color: Colors.white),
         ),
       ),
