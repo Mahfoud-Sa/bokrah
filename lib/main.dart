@@ -7,6 +7,7 @@ import 'package:bokrah/app/initialzation_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
+import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bokrah_design_system/bokrah_design_system.dart';
@@ -28,6 +29,9 @@ Future<void> main() async {
         ),
         BlocProvider(
           create: (context) => singelton<AppUpdateCubit>(),
+        ),
+        BlocProvider(
+          create: (context) => singelton<SessionCubit>(),
         ),
       ],
       child: MyApp(packageInfo: packageInfo),

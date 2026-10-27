@@ -7,7 +7,23 @@ class UsersService {
 
   Future<List<UserEntity>> getAllUsers() async {
     final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList(_usersKey) ?? [];
+    final list = prefs.getStringList(_usersKey);
+    if (list == null || list.isEmpty) {
+      final defaultAdmin = UserEntity(
+        id: 1,
+        name: 'المدير العام',
+        email: 'admin@bokrah.com',
+        phoneNumber: '+966500000000',
+        role: OperatorRole.admin,
+        isActive: true,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      await prefs.setStringList(
+        _usersKey,
+        [json.encode(defaultAdmin.toMap())],
+      );
+      return [defaultAdmin];
+    }
     return list.map((e) => UserEntity.fromMap(json.decode(e))).toList();
   }
 
@@ -23,7 +39,7 @@ class UsersService {
         address: user.address,
         birthDate: user.birthDate,
         gender: user.gender,
-        roles: user.roles,
+        role: user.role,
         profileImage: user.profileImage,
         isActive: user.isActive,
         createdAt: user.createdAt,

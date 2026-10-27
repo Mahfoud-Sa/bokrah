@@ -20,6 +20,8 @@ import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
 import 'package:bokrah/app/features/home/main_content.dart';
 import 'package:bokrah/app/features/home/side_bar_item.dart';
+import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart';
+import 'package:bokrah/app/features/users/presentation/cubits/session_state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -158,10 +160,45 @@ class _HomePageState extends State<HomePage> {
   Widget _buildUserMenu({bool isMobile = false}) {
     final isArabic =
         context.watch<SettingsCubit>().state.locale.languageCode == 'ar';
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 50),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      icon: Container(
+    SessionState? sessionState;
+    try {
+      sessionState = context.watch<SessionCubit>().state;
+    } catch (_) {}
+    final operator = sessionState?.currentOperator;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (operator != null) ...[
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment:
+                isArabic ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+            children: [
+              Text(
+                operator.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                operator.role.displayName,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+        PopupMenuButton<String>(
+          offset: const Offset(0, 50),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          icon: Container(
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -208,12 +245,13 @@ class _HomePageState extends State<HomePage> {
               style: const TextStyle(color: Colors.red),
             ),
             contentPadding: EdgeInsets.zero,
-            dense: true,
           ),
         ),
       ],
-    );
-  }
+    ),
+  ],
+);
+}
 
   String _pageTitle(int index, bool isArabic) {
     if (isArabic) {
@@ -344,6 +382,13 @@ class _HomePageState extends State<HomePage> {
       const ProfilePage(),
     ];
 
+    SessionState? sessionState;
+    try {
+      sessionState = context.watch<SessionCubit>().state;
+    } catch (_) {}
+    final canAccessAccounting = sessionState?.canAccessAccounting ?? true;
+    final canAccessUsers = sessionState?.canAccessUsers ?? true;
+
     Widget sidebarContent = Container(
       width: 260,
       decoration: BoxDecoration(
@@ -458,55 +503,57 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
                 // 1. Accounting & Finance
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    isArabic ? "المحاسبة والمالية" : "Accounting & Finance",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.85),
+                if (canAccessAccounting) ...[
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text(
+                      isArabic ? "المحاسبة والمالية" : "Accounting & Finance",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.85),
+                      ),
                     ),
                   ),
-                ),
-                SidebarItem(
-                  icon: Icons.dashboard_outlined,
-                  label: isArabic ? "لوحة التحكم" : "Dashboard",
-                  isSelected: selectedIndex == 0,
-                  onTap: () {
-                    setState(() => selectedIndex = 0);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                SidebarItem(
-                  icon: Icons.receipt_long_outlined,
-                  label: isArabic ? "المبيعات والمعاملات" : "Transactions",
-                  isSelected: selectedIndex == 1,
-                  onTap: () {
-                    setState(() => selectedIndex = 1);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                SidebarItem(
-                  icon: Icons.edit_note_outlined,
-                  label: isArabic ? "القيود اليومية" : "Journal Entries",
-                  isSelected: selectedIndex == 2,
-                  onTap: () {
-                    setState(() => selectedIndex = 2);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
+                  SidebarItem(
+                    icon: Icons.dashboard_outlined,
+                    label: isArabic ? "لوحة التحكم" : "Dashboard",
+                    isSelected: selectedIndex == 0,
+                    onTap: () {
+                      setState(() => selectedIndex = 0);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.receipt_long_outlined,
+                    label: isArabic ? "المبيعات والمعاملات" : "Transactions",
+                    isSelected: selectedIndex == 1,
+                    onTap: () {
+                      setState(() => selectedIndex = 1);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.edit_note_outlined,
+                    label: isArabic ? "القيود اليومية" : "Journal Entries",
+                    isSelected: selectedIndex == 2,
+                    onTap: () {
+                      setState(() => selectedIndex = 2);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ],
                 SidebarItem(
                   icon: Icons.description_outlined,
                   label: isArabic ? "إدارة الفواتير" : "Invoices",
@@ -518,28 +565,30 @@ class _HomePageState extends State<HomePage> {
                     }
                   },
                 ),
-                SidebarItem(
-                  icon: Icons.account_tree_outlined,
-                  label: isArabic ? "شجرة الحسابات" : "Chart of Accounts",
-                  isSelected: selectedIndex == 4,
-                  onTap: () {
-                    setState(() => selectedIndex = 4);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
-                SidebarItem(
-                  icon: Icons.analytics_outlined,
-                  label: isArabic ? "التقارير المالية" : "Financial Reports",
-                  isSelected: selectedIndex == 5,
-                  onTap: () {
-                    setState(() => selectedIndex = 5);
-                    if (isMobile) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                ),
+                if (canAccessAccounting) ...[
+                  SidebarItem(
+                    icon: Icons.account_tree_outlined,
+                    label: isArabic ? "شجرة الحسابات" : "Chart of Accounts",
+                    isSelected: selectedIndex == 4,
+                    onTap: () {
+                      setState(() => selectedIndex = 4);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  SidebarItem(
+                    icon: Icons.analytics_outlined,
+                    label: isArabic ? "التقارير المالية" : "Financial Reports",
+                    isSelected: selectedIndex == 5,
+                    onTap: () {
+                      setState(() => selectedIndex = 5);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ],
 
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -662,17 +711,18 @@ class _HomePageState extends State<HomePage> {
                       () => isSettingsExpanded = !isSettingsExpanded),
                 ),
                 if (isSettingsExpanded) ...[
-                  SidebarItem(
-                    icon: Icons.manage_accounts_outlined,
-                    label: isArabic ? "إدارة المستخدمين" : "Users Management",
-                    isSelected: selectedIndex == 11,
-                    onTap: () {
-                      setState(() => selectedIndex = 11);
-                      if (isMobile) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
+                  if (canAccessUsers)
+                    SidebarItem(
+                      icon: Icons.manage_accounts_outlined,
+                      label: isArabic ? "إدارة المستخدمين" : "Users Management",
+                      isSelected: selectedIndex == 11,
+                      onTap: () {
+                        setState(() => selectedIndex = 11);
+                        if (isMobile) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
                   SidebarItem(
                     icon: Icons.person_outline,
                     label: isArabic ? "ملفي الشخصي" : "Profile",

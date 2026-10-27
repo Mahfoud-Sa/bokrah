@@ -8,6 +8,8 @@ import 'features/autoUpdate/data/datasources/update_preferences_datasource.dart'
 import 'features/autoUpdate/data/repositories/app_update_repository_impl.dart';
 import 'features/autoUpdate/domain/repositories/app_update_repository.dart';
 import 'features/autoUpdate/presentation/cubits/app_update_cubit.dart';
+import 'features/users/data/services/users_service.dart';
+import 'features/users/presentation/cubits/session_cubit.dart';
 
 final singelton = GetIt.instance;
 
@@ -32,6 +34,14 @@ Future<void> initializationDependencies() async {
     singelton.registerSingleton<AppUpdateRepository>(repository);
     singelton.registerLazySingleton<AppUpdateCubit>(
       () => AppUpdateCubit(repository: repository),
+    );
+  }
+
+  if (!singelton.isRegistered<UsersService>()) {
+    final usersService = UsersService();
+    singelton.registerSingleton<UsersService>(usersService);
+    singelton.registerLazySingleton<SessionCubit>(
+      () => SessionCubit(usersService: usersService),
     );
   }
 }

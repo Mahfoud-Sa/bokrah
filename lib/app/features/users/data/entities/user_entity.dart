@@ -1,3 +1,45 @@
+enum OperatorRole {
+  admin,
+  cashier,
+  accountant;
+
+  String get displayName {
+    switch (this) {
+      case OperatorRole.admin:
+        return 'مسؤول';
+      case OperatorRole.cashier:
+        return 'كاشير';
+      case OperatorRole.accountant:
+        return 'محاسب';
+    }
+  }
+
+  String get nameEn {
+    switch (this) {
+      case OperatorRole.admin:
+        return 'Admin';
+      case OperatorRole.cashier:
+        return 'Cashier';
+      case OperatorRole.accountant:
+        return 'Accountant';
+    }
+  }
+
+  static OperatorRole fromString(String? role) {
+    if (role == null) return OperatorRole.cashier;
+    final normalized = role.trim().toLowerCase();
+    if (normalized == 'admin' ||
+        normalized == 'مسؤول' ||
+        normalized == 'owner') {
+      return OperatorRole.admin;
+    }
+    if (normalized == 'accountant' || normalized == 'محاسب') {
+      return OperatorRole.accountant;
+    }
+    return OperatorRole.cashier;
+  }
+}
+
 class UserEntity {
   final int? id;
   final String name;
@@ -6,7 +48,7 @@ class UserEntity {
   final String? address;
   final String? birthDate;
   final String? gender;
-  final List<String> roles;
+  final OperatorRole role;
   final String? profileImage;
   final bool isActive;
   final String? createdAt;
@@ -19,11 +61,22 @@ class UserEntity {
     this.address,
     this.birthDate,
     this.gender,
-    this.roles = const ['Staff'],
+    this.role = OperatorRole.cashier,
+    List<String>? roles,
     this.profileImage,
     this.isActive = true,
     this.createdAt,
-  });
+  }) : _legacyRoles = roles;
+
+  final List<String>? _legacyRoles;
+
+  List<String> get roles {
+    final legacy = _legacyRoles;
+    if (legacy != null && legacy.isNotEmpty) {
+      return legacy;
+    }
+    return [role.nameEn];
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -34,6 +87,7 @@ class UserEntity {
       'address': address,
       'birthDate': birthDate,
       'gender': gender,
+      'role': role.nameEn,
       'roles': roles,
       'profileImage': profileImage,
       'isActive': isActive,
@@ -42,6 +96,13 @@ class UserEntity {
   }
 
   factory UserEntity.fromMap(Map<String, dynamic> map) {
+    OperatorRole resolvedRole = OperatorRole.cashier;
+    if (map['role'] != null) {
+      resolvedRole = OperatorRole.fromString(map['role'].toString());
+    } else if (map['roles'] != null && (map['roles'] as List).isNotEmpty) {
+      resolvedRole = OperatorRole.fromString(map['roles'][0].toString());
+    }
+
     return UserEntity(
       id: map['id'],
       name: map['name'] ?? '',
@@ -50,10 +111,11 @@ class UserEntity {
       address: map['address'],
       birthDate: map['birthDate'],
       gender: map['gender'],
-      roles: List<String>.from(map['roles'] ?? ['Staff']),
+      role: resolvedRole,
       profileImage: map['profileImage'],
       isActive: map['isActive'] ?? true,
       createdAt: map['createdAt'],
     );
   }
 }
+

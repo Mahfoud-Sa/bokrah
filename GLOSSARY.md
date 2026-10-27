@@ -19,3 +19,19 @@ _Avoid_: Download file, payload
 **Skipped Version**:
 A Release version explicitly dismissed by the user to suppress automated startup update prompts until a higher version is published.
 _Avoid_: Ignored update, muted version
+
+## Users & Access Control
+
+**Operator**:
+An authenticated staff member actively interacting with the client application or terminal.
+_Avoid_: Active user, cashier (when referring generically to any staff member operating the system)
+
+**Role**:
+A named level of access assigned to an operator (`Admin`, `Cashier`, `Accountant`) determining which application areas and pages are accessible.
+_Avoid_: Group, profile, user type
+
+**Access Level**:
+The scope of screens and operations an operator is authorized to access based on their assigned role.
+_Avoid_: Entitlement, privilege, permission matrix
+
+

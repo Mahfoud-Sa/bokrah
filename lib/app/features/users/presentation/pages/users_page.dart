@@ -44,7 +44,7 @@ class _UsersPageState extends State<UsersPage> {
     );
 
     String? selectedGender = user?.gender ?? 'ذكر';
-    List<String> selectedRoles = user?.roles ?? ['Staff'];
+    OperatorRole selectedRole = user?.role ?? OperatorRole.cashier;
     bool isActive = user?.isActive ?? true;
 
     await showDialog(
@@ -119,38 +119,48 @@ class _UsersPageState extends State<UsersPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Roles Selection
+                      // Role Selection
                       const Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          'الأدوار:',
+                          'الدور:',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
-                      CheckboxListTile(
+                      RadioListTile<OperatorRole>(
                         title: const Text('مسؤول (Admin)'),
-                        value: selectedRoles.contains('Admin'),
+                        subtitle:
+                            const Text('صلاحيات كاملة لكافة أقسام النظام'),
+                        value: OperatorRole.admin,
+                        groupValue: selectedRole,
                         onChanged: (val) {
-                          setDialogState(() {
-                            if (val == true) {
-                              selectedRoles.add('Admin');
-                            } else {
-                              selectedRoles.remove('Admin');
-                            }
-                          });
+                          if (val != null) {
+                            setDialogState(() => selectedRole = val);
+                          }
                         },
                       ),
-                      CheckboxListTile(
-                        title: const Text('موظف (Staff)'),
-                        value: selectedRoles.contains('Staff'),
+                      RadioListTile<OperatorRole>(
+                        title: const Text('كاشير (Cashier)'),
+                        subtitle:
+                            const Text('عمليات البيع، المنتجات والفواتير'),
+                        value: OperatorRole.cashier,
+                        groupValue: selectedRole,
                         onChanged: (val) {
-                          setDialogState(() {
-                            if (val == true) {
-                              selectedRoles.add('Staff');
-                            } else {
-                              selectedRoles.remove('Staff');
-                            }
-                          });
+                          if (val != null) {
+                            setDialogState(() => selectedRole = val);
+                          }
+                        },
+                      ),
+                      RadioListTile<OperatorRole>(
+                        title: const Text('محاسب (Accountant)'),
+                        subtitle:
+                            const Text('الفواتير، المحاسبة والتقارير المالية'),
+                        value: OperatorRole.accountant,
+                        groupValue: selectedRole,
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() => selectedRole = val);
+                          }
                         },
                       ),
 
@@ -180,7 +190,7 @@ class _UsersPageState extends State<UsersPage> {
                         address: addressController.text.trim(),
                         birthDate: birthDateController.text.trim(),
                         gender: selectedGender,
-                        roles: selectedRoles,
+                        role: selectedRole,
                         isActive: isActive,
                         createdAt: user?.createdAt,
                       );
@@ -318,18 +328,54 @@ class _UsersPageState extends State<UsersPage> {
                             : Colors.grey,
                         child: const Icon(Icons.person, color: Colors.white),
                       ),
-                      title: Text(
-                        user.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              user.name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: user.role == OperatorRole.admin
+                                  ? Colors.amber.withValues(alpha: 0.15)
+                                  : user.role == OperatorRole.accountant
+                                      ? Colors.teal.withValues(alpha: 0.15)
+                                      : Colors.blue.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              user.role.displayName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: user.role == OperatorRole.admin
+                                    ? Colors.amber[900]
+                                    : user.role == OperatorRole.accountant
+                                        ? Colors.teal[800]
+                                        : Colors.blue[800],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 4),
                           Text(user.email),
-                          Text(
-                            'الأدوار: ${user.roles.join(', ')}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
+                          if (user.phoneNumber != null &&
+                              user.phoneNumber!.isNotEmpty)
+                            Text(
+                              user.phoneNumber!,
+                              style: const TextStyle(fontSize: 12),
+                            ),
                         ],
                       ),
                       trailing: Row(
