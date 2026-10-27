@@ -12,6 +12,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bokrah_design_system/bokrah_design_system.dart';
 
+import 'package:bokrah/app/features/restaurant/presentation/cubits/restaurant_cubit.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -33,11 +35,15 @@ Future<void> main() async {
         BlocProvider(
           create: (context) => singelton<SessionCubit>(),
         ),
+        BlocProvider(
+          create: (context) => singelton<RestaurantCubit>()..loadRestaurant(),
+        ),
       ],
       child: MyApp(packageInfo: packageInfo),
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   final PackageInfo packageInfo;

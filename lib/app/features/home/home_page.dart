@@ -18,6 +18,7 @@ import 'package:bokrah/app/features/units/presentation/pages/units_page.dart';
 import 'package:bokrah/app/features/barcoders/presentation/pages/barcoders_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
+import 'package:bokrah/app/features/restaurant/presentation/pages/restaurant_info_page.dart';
 import 'package:bokrah/app/features/home/main_content.dart';
 import 'package:bokrah/app/features/home/side_bar_item.dart';
 import 'package:bokrah/app/features/users/data/entities/user_entity.dart';
@@ -223,11 +224,25 @@ class _HomePageState extends State<HomePage> {
       onSelected: (value) {
         if (value == 'profile') {
           setState(() => selectedIndex = 12);
+        } else if (value == 'restaurant') {
+          setState(() => selectedIndex = 13);
         } else if (value == 'logout') {
           _showLogoutDialog();
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        if (operator?.role == OperatorRole.admin) ...[
+          PopupMenuItem<String>(
+            value: 'restaurant',
+            child: ListTile(
+              leading: const Icon(Icons.storefront_outlined),
+              title: Text(isArabic ? 'بيانات المطعم' : 'Restaurant Profile'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+          ),
+          const PopupMenuDivider(),
+        ],
         PopupMenuItem<String>(
           value: 'profile',
           child: ListTile(
@@ -271,6 +286,7 @@ class _HomePageState extends State<HomePage> {
         10 => 'إدارة الباركودات',
         11 => 'إدارة المستخدمين',
         12 => 'الملف الشخصي',
+        13 => 'بيانات المطعم',
         _ => AppLocalizations.of(context)?.appName ?? 'بكرة للمحاسبة',
       };
     }
@@ -288,6 +304,7 @@ class _HomePageState extends State<HomePage> {
       10 => 'Barcode Management',
       11 => 'User Management',
       12 => 'My Profile',
+      13 => 'Restaurant Profile',
       _ => AppLocalizations.of(context)?.appName ?? 'Bokrah Accounting',
     };
   }
@@ -307,6 +324,7 @@ class _HomePageState extends State<HomePage> {
       10 => Icons.qr_code_outlined,
       11 => Icons.manage_accounts_outlined,
       12 => Icons.person_outline,
+      13 => Icons.storefront_outlined,
       _ => Icons.circle_outlined,
     };
   }
@@ -382,6 +400,8 @@ class _HomePageState extends State<HomePage> {
       const UsersPage(),
       // 12: Profile
       const ProfilePage(),
+      // 13: Restaurant Info
+      const RestaurantInfoPage(),
     ];
 
     SessionState? sessionState;
@@ -706,13 +726,24 @@ class _HomePageState extends State<HomePage> {
                 SidebarItem(
                   icon: Icons.settings_outlined,
                   label: isArabic ? "الإعدادات والمستخدمين" : "Settings",
-                  isSelected: selectedIndex == 11 || selectedIndex == 12,
+                  isSelected: selectedIndex >= 11 && selectedIndex <= 13,
                   hasArrow: true,
                   isExpanded: isSettingsExpanded,
                   onTap: () => setState(
                       () => isSettingsExpanded = !isSettingsExpanded),
                 ),
                 if (isSettingsExpanded) ...[
+                  SidebarItem(
+                    icon: Icons.storefront_outlined,
+                    label: isArabic ? "بيانات المطعم" : "Restaurant Profile",
+                    isSelected: selectedIndex == 13,
+                    onTap: () {
+                      setState(() => selectedIndex = 13);
+                      if (isMobile) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
                   if (canAccessUsers)
                     SidebarItem(
                       icon: Icons.manage_accounts_outlined,

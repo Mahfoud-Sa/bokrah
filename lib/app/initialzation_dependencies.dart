@@ -11,6 +11,9 @@ import 'features/autoUpdate/presentation/cubits/app_update_cubit.dart';
 import 'features/users/data/services/users_service.dart';
 import 'features/users/presentation/cubits/session_cubit.dart';
 
+import 'features/restaurant/data/services/restaurant_service.dart';
+import 'features/restaurant/presentation/cubits/restaurant_cubit.dart';
+
 final singelton = GetIt.instance;
 
 Future<void> initializationDependencies() async {
@@ -44,4 +47,13 @@ Future<void> initializationDependencies() async {
       () => SessionCubit(usersService: usersService),
     );
   }
+
+  if (!singelton.isRegistered<RestaurantService>()) {
+    final restaurantService = RestaurantService();
+    singelton.registerSingleton<RestaurantService>(restaurantService);
+    singelton.registerLazySingleton<RestaurantCubit>(
+      () => RestaurantCubit(service: restaurantService),
+    );
+  }
 }
+
