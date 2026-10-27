@@ -1,7 +1,10 @@
 import 'package:bokrah/app/features/users/data/entities/user_entity.dart';
 import 'package:bokrah/app/features/users/data/services/users_service.dart';
+import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart';
+import 'package:bokrah/app/features/users/presentation/cubits/session_state.dart';
 import 'package:bokrah_design_system/bokrah_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({super.key});
@@ -204,6 +207,17 @@ class _UsersPageState extends State<UsersPage> {
                           : await _usersService.saveUser(newUser);
 
                       if (context.mounted && success) {
+                        try {
+                          final sessionCubit = context.read<SessionCubit>();
+                          final currentActive =
+                              sessionCubit.state.currentOperator;
+                          if (currentActive != null &&
+                              ((newUser.id != null &&
+                                      currentActive.id == newUser.id) ||
+                                  currentActive.email == newUser.email)) {
+                            sessionCubit.switchOperator(newUser);
+                          }
+                        } catch (_) {}
                         Navigator.pop(context);
                         _loadUsers();
                       }
@@ -261,20 +275,24 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   Widget build(BuildContext context) {
+    SessionState? sessionState;
+    try {
+      sessionState = context.watch<SessionCubit>().state;
+    } catch (_) {}
+    final activeOperator = sessionState?.currentOperator;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
         appBar: AppBar(
           title: const Text(
             'إدارة المستخدمين',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          backgroundColor: const Color(0xFF2E7D64),
-          foregroundColor: Colors.white,
           actions: [
             IconButton(
               icon: const Icon(Icons.person_add),
+              tooltip: 'إضافة مستخدم جديد',
               onPressed: () => _showAddEditDialog(),
             ),
           ],
@@ -283,37 +301,43 @@ class _UsersPageState extends State<UsersPage> {
             ? const Center(child: CircularProgressIndicator())
             : _users.isEmpty
             ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 80,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'لا يوجد مستخدمون بعد',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddEditDialog(),
-                      icon: const Icon(Icons.add),
-                      label: const Text('إضافة مستخدم'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D64),
-                        foregroundColor: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(BkSpace.xl),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: BkSpace.md),
+                      Text(
+                        'لا يوجد مستخدمون بعد',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: BkSpace.xl),
+                      BkButton(
+                        label: 'إضافة مستخدم',
+                        variant: BkButtonVariant.primary,
+                        onPressed: () => _showAddEditDialog(),
+                      ),
+                    ],
+                  ),
                 ),
               )
             : ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(BkSpace.md),
                 itemCount: _users.length,
                 itemBuilder: (context, index) {
                   final user = _users[index];
+                  final isActiveOperator = activeOperator != null &&
+                      ((user.id != null && user.id == activeOperator.id) ||
+                          user.email == activeOperator.email);
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: BkSpace.sm),
                     child: BkCard(
@@ -321,7 +345,7 @@ class _UsersPageState extends State<UsersPage> {
                         leading: CircleAvatar(
                           backgroundColor: user.isActive
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey,
+                              : Theme.of(context).disabledColor,
                           child: const Icon(Icons.person, color: Colors.white),
                         ),
                         title: Row(
@@ -330,9 +354,17 @@ class _UsersPageState extends State<UsersPage> {
                               child: Text(
                                 user.name,
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            if (isActiveOperator) ...[
+                              const BkBadge(
+                                label: 'المشغّل الحالي',
+                                tone: BkTone.info,
+                              ),
+                              const SizedBox(width: BkSpace.sm),
+                            ],
                             BkBadge(
                               label: user.role.displayName,
                               tone: user.role == OperatorRole.admin
@@ -360,40 +392,55 @@ class _UsersPageState extends State<UsersPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              icon: Icon(
+                                Icons.edit,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              tooltip: 'تعديل',
                               onPressed: () => _showAddEditDialog(user: user),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('حذف مستخدم'),
-                                    content: const Text(
-                                      'هل أنت متأكد من حذف هذا المستخدم؟',
-                                    ),
-                                    actions: [
-                                      BkButton(
-                                        label: 'إلغاء',
-                                        variant: BkButtonVariant.secondary,
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                      ),
-                                      BkButton(
-                                        label: 'حذف',
-                                        variant: BkButtonVariant.danger,
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  await _usersService.deleteUser(user.id!);
-                                  _loadUsers();
-                                }
-                              },
+                              icon: Icon(
+                                Icons.delete_outline,
+                                color: isActiveOperator
+                                    ? Theme.of(context).disabledColor
+                                    : Theme.of(context).colorScheme.error,
+                              ),
+                              tooltip: isActiveOperator
+                                  ? 'المشغّل الحالي (لا يمكن حذفه)'
+                                  : 'حذف',
+                              onPressed: isActiveOperator
+                                  ? null
+                                  : () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('حذف مستخدم'),
+                                          content: Text(
+                                            'هل أنت متأكد من حذف المستخدم "${user.name}"؟',
+                                          ),
+                                          actions: [
+                                            BkButton(
+                                              label: 'إلغاء',
+                                              variant:
+                                                  BkButtonVariant.secondary,
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                            ),
+                                            BkButton(
+                                              label: 'حذف',
+                                              variant: BkButtonVariant.danger,
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await _usersService.deleteUser(user.id!);
+                                        _loadUsers();
+                                      }
+                                    },
                             ),
                           ],
                         ),
