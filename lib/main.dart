@@ -36,15 +36,15 @@ Future<void> main() async {
           create: (context) => singelton<RestaurantCubit>()..loadRestaurant(),
         ),
       ],
-      child: MyApp(packageInfo: packageInfo),
+      child: Bokrah(packageInfo: packageInfo),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class Bokrah extends StatelessWidget {
   final PackageInfo packageInfo;
 
-  const MyApp({super.key, required this.packageInfo});
+  const Bokrah({super.key, required this.packageInfo});
 
   @override
   Widget build(BuildContext context) {
