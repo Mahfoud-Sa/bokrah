@@ -18,32 +18,41 @@ class RestaurantHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Top Toolbar: Language + Theme + Skip to Dashboard
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             // Skip button for desktop convenience
-            TextButton.icon(
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                ),
+                icon: Icon(
+                  isArabic ? Icons.arrow_back : Icons.arrow_forward,
+                  size: 16,
+                ),
+                label: Text(
+                  isArabic ? 'تخطي إلى الرئيسية' : 'Skip to Dashboard',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onPressed: () {
+                  try {
+                    context.go('/home');
+                  } catch (_) {}
+                },
               ),
-              icon: Icon(
-                isArabic ? Icons.arrow_back : Icons.arrow_forward,
-                size: 16,
-              ),
-              label: Text(
-                isArabic ? 'تخطي إلى الرئيسية' : 'Skip to Dashboard',
-                style: const TextStyle(fontSize: 12),
-              ),
-              onPressed: () {
-                try {
-                  context.go('/home');
-                } catch (_) {}
-              },
             ),
 
             // Controls
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 // Language Pill
                 InkWell(
@@ -61,24 +70,27 @@ class RestaurantHeader extends StatelessWidget {
                         color: theme.dividerColor.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.language,
-                          size: 14,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isArabic ? 'English' : 'العربية',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.language,
+                            size: 14,
                             color: theme.colorScheme.primary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            isArabic ? 'English' : 'العربية',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

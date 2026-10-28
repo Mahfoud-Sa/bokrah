@@ -8,6 +8,7 @@ class SidebarItem extends StatelessWidget {
   final bool hasArrow;
   final bool isExpanded;
   final Color? color;
+  final Widget? trailing;
 
   const SidebarItem({
     super.key,
@@ -18,6 +19,7 @@ class SidebarItem extends StatelessWidget {
     this.hasArrow = false,
     this.isExpanded = false,
     this.color,
+    this.trailing,
   });
 
   @override
@@ -55,6 +57,10 @@ class SidebarItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ],
                 if (hasArrow) ...[
                   const SizedBox(width: 8),
                   Icon(

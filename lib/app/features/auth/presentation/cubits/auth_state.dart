@@ -21,6 +21,7 @@ enum AuthStatus {
   otpSent,
   verifyingOtp,
   authenticated,
+  guest,
   error,
 }
 
@@ -67,6 +68,10 @@ class AuthState extends Equatable {
       status == AuthStatus.loading ||
       status == AuthStatus.sendingOtp ||
       status == AuthStatus.verifyingOtp;
+
+  bool get isGuest => status == AuthStatus.guest;
+
+  bool get isAuthenticated => status == AuthStatus.authenticated;
 
   bool get isEmailValid =>
       RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim());

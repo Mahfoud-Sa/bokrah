@@ -11,6 +11,7 @@ import 'features/autoUpdate/presentation/cubits/app_update_cubit.dart';
 import 'features/users/data/services/users_service.dart';
 import 'features/users/presentation/cubits/session_cubit.dart';
 
+import 'features/auth/presentation/cubits/auth_cubit.dart';
 import 'features/restaurant/data/services/restaurant_service.dart';
 import 'features/restaurant/presentation/cubits/restaurant_cubit.dart';
 
@@ -25,6 +26,12 @@ Future<void> initializationDependencies() async {
     singelton.registerSingleton<AuthService>(
       MockAuthService(tokenStorage: storage),
     );
+  }
+
+  if (!singelton.isRegistered<AuthCubit>()) {
+    final authCubit = AuthCubit(authService: singelton<AuthService>());
+    singelton.registerSingleton<AuthCubit>(authCubit);
+    authCubit.checkAuthStatus();
   }
 
   if (!singelton.isRegistered<AppUpdateRepository>()) {

@@ -87,6 +87,39 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(clearError: true));
   }
 
+  /// Continues into the application as a guest user.
+  void continueAsGuest() {
+    _countdownTimer?.cancel();
+    emit(state.copyWith(
+      status: AuthStatus.guest,
+      clearError: true,
+    ));
+  }
+
+  /// Verifies if a stored valid session exists.
+  Future<void> checkAuthStatus() async {
+    try {
+      final isAuth = await _authService.isAuthenticated();
+      if (isAuth) {
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+          clearError: true,
+        ));
+      }
+    } catch (_) {
+      // In case of storage read issue, remain in initial state
+    }
+  }
+
+  /// Signs out the user, revokes session and resets cubit state.
+  Future<void> logout() async {
+    _countdownTimer?.cancel();
+    try {
+      await _authService.signOut();
+    } catch (_) {}
+    emit(AuthState.initial());
+  }
+
   void editPhoneNumber() {
     _countdownTimer?.cancel();
     emit(state.copyWith(

@@ -20,10 +20,14 @@ import 'package:bokrah/app/features/users/presentation/pages/users_page.dart';
 import 'package:bokrah/app/features/users/presentation/pages/profile_page.dart';
 import 'package:bokrah/app/features/restaurant/presentation/pages/restaurant_info_page.dart';
 import 'package:bokrah/app/features/home/main_content.dart';
+import 'package:bokrah/app/features/home/notification_page.dart';
 import 'package:bokrah/app/features/home/side_bar_item.dart';
 import 'package:bokrah/app/features/users/data/entities/user_entity.dart';
 import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart';
 import 'package:bokrah/app/features/users/presentation/cubits/session_state.dart';
+import 'package:bokrah/app/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:bokrah/app/features/auth/presentation/cubits/auth_state.dart';
+import 'package:bokrah/app/features/auth/presentation/widgets/guest_restricted_view.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -74,6 +78,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
+          scrollable: true,
           title: const Text('معلومات التطبيق'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -89,6 +94,17 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AppUpdateScreen(),
+                  ),
+                );
+              },
+              child: const Text('التحقق من التحديثات'),
+            ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('موافق'),
@@ -131,6 +147,7 @@ class _HomePageState extends State<HomePage> {
         return Directionality(
           textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: AlertDialog(
+            scrollable: true,
             title: Text(isArabic ? 'بكرة للمحاسبة' : 'Bokrah Accounting'),
             content: Text(
               isArabic
@@ -149,6 +166,9 @@ class _HomePageState extends State<HomePage> {
                 child: Text(isArabic ? 'تسجيل الخروج' : 'Log Out'),
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
+                  try {
+                    context.read<AuthCubit>().logout();
+                  } catch (_) {}
                   context.go('/login');
                 },
               ),
@@ -159,9 +179,175 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _showGuestPromptDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+  }) {
+    final isArabic =
+        context.read<SettingsCubit>().state.locale.languageCode == 'ar';
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(BkRadius.lg),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.lock_person_outlined,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isArabic ? 'تسجيل الدخول مطلوب' : 'Sign In Required',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 14, height: 1.45),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.go('/login');
+              },
+              icon: const Icon(Icons.login_rounded, size: 16),
+              label: Text(isArabic ? 'تسجيل الدخول' : 'Sign In'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildUserMenu({bool isMobile = false}) {
     final isArabic =
         context.watch<SettingsCubit>().state.locale.languageCode == 'ar';
+    AuthState? authState;
+    try {
+      authState = context.watch<AuthCubit>().state;
+    } catch (_) {}
+    final isGuest = authState?.isGuest ?? false;
+
+    if (isGuest) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isMobile) ...[
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment:
+                  isArabic ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+              children: [
+                Text(
+                  isArabic ? 'حساب زائر' : 'Guest User',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                BkBadge(
+                  label: isArabic ? 'ضيف' : 'Guest',
+                  tone: BkTone.neutral,
+                ),
+              ],
+            ),
+            const SizedBox(width: BkSpace.sm),
+          ],
+          FilledButton.tonalIcon(
+            style: FilledButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            ),
+            onPressed: () => context.go('/login'),
+            icon: const Icon(Icons.login_rounded, size: 16),
+            label: Text(
+              isArabic ? 'تسجيل الدخول' : 'Sign In',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: BkSpace.xs),
+          PopupMenuButton<String>(
+            offset: const Offset(0, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            icon: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: CircleAvatar(
+                radius: isMobile ? 14 : 16,
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
+                child: Icon(
+                  Icons.person_outline,
+                  size: isMobile ? 18 : 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            onSelected: (value) {
+              if (value == 'login') {
+                context.go('/login');
+              } else if (value == 'app_info') {
+                _showVersionInfo();
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'login',
+                child: ListTile(
+                  leading: const Icon(Icons.login_rounded),
+                  title: Text(isArabic ? 'تسجيل الدخول' : 'Sign In'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                value: 'app_info',
+                child: ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: Text(isArabic ? 'معلومات التطبيق' : 'App Information'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
     SessionState? sessionState;
     try {
       sessionState = context.watch<SessionCubit>().state;
@@ -171,7 +357,7 @@ class _HomePageState extends State<HomePage> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (operator != null) ...[
+        if (operator != null && !isMobile) ...[
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment:
@@ -202,73 +388,73 @@ class _HomePageState extends State<HomePage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           icon: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-            width: 1.5,
-          ),
-        ),
-        child: CircleAvatar(
-          radius: isMobile ? 14 : 16,
-          backgroundColor:
-              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-          child: Icon(
-            Icons.person,
-            size: isMobile ? 18 : 20,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
-      onSelected: (value) {
-        if (value == 'profile') {
-          setState(() => selectedIndex = 12);
-        } else if (value == 'restaurant') {
-          setState(() => selectedIndex = 13);
-        } else if (value == 'logout') {
-          _showLogoutDialog();
-        }
-      },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        if (operator?.role == OperatorRole.admin) ...[
-          PopupMenuItem<String>(
-            value: 'restaurant',
-            child: ListTile(
-              leading: const Icon(Icons.storefront_outlined),
-              title: Text(isArabic ? 'بيانات المطعم' : 'Restaurant Profile'),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: isMobile ? 14 : 16,
+              backgroundColor:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              child: Icon(
+                Icons.person,
+                size: isMobile ? 18 : 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
-          const PopupMenuDivider(),
-        ],
-        PopupMenuItem<String>(
-          value: 'profile',
-          child: ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text(isArabic ? 'الملف الشخصي' : 'My Profile'),
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-          ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(
-          value: 'logout',
-          child: ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(
-              isArabic ? 'تسجيل الخروج' : 'Log Out',
-              style: const TextStyle(color: Colors.red),
+          onSelected: (value) {
+            if (value == 'profile') {
+              setState(() => selectedIndex = 12);
+            } else if (value == 'restaurant') {
+              setState(() => selectedIndex = 13);
+            } else if (value == 'logout') {
+              _showLogoutDialog();
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            if (operator?.role == OperatorRole.admin) ...[
+              PopupMenuItem<String>(
+                value: 'restaurant',
+                child: ListTile(
+                  leading: const Icon(Icons.storefront_outlined),
+                  title: Text(isArabic ? 'بيانات المطعم' : 'Restaurant Profile'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+              ),
+              const PopupMenuDivider(),
+            ],
+            PopupMenuItem<String>(
+              value: 'profile',
+              child: ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: Text(isArabic ? 'الملف الشخصي' : 'My Profile'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
             ),
-            contentPadding: EdgeInsets.zero,
-          ),
+            const PopupMenuDivider(),
+            PopupMenuItem<String>(
+              value: 'logout',
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: Text(
+                  isArabic ? 'تسجيل الخروج' : 'Log Out',
+                  style: const TextStyle(color: Colors.red),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ),
       ],
-    ),
-  ],
-);
-}
+    );
+  }
 
   String _pageTitle(int index, bool isArabic) {
     if (isArabic) {
@@ -352,11 +538,106 @@ class _HomePageState extends State<HomePage> {
     };
   }
 
+  Widget _buildUpdateActionButton({
+    required BuildContext context,
+    required bool isMobile,
+    required bool isArabic,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (isMobile) {
+      return Tooltip(
+        message: isArabic ? 'تحديث متاح للتطبيق' : 'App update available',
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.system_update_alt_rounded),
+              color: colorScheme.primary,
+              tooltip: isArabic ? 'تحديث متاح للتطبيق' : 'App update available',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AppUpdateScreen(),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              right: 6,
+              top: 6,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Tooltip(
+        message: isArabic ? 'يوجد إصدار جديد للتطبيق' : 'New version available',
+        child: FilledButton.tonalIcon(
+          style: FilledButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            backgroundColor:
+                colorScheme.primaryContainer.withValues(alpha: 0.7),
+            foregroundColor: colorScheme.onPrimaryContainer,
+          ),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const AppUpdateScreen(),
+              ),
+            );
+          },
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.system_update_alt_rounded, size: 18),
+              Positioned(
+                right: -3,
+                top: -3,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          label: Text(
+            isArabic ? 'تحديث جديد' : 'Update Available',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
     final isArabic =
         context.watch<SettingsCubit>().state.locale.languageCode == 'ar';
+    AuthState? authState;
+    try {
+      authState = context.watch<AuthCubit>().state;
+    } catch (_) {}
+    final isGuest = authState?.isGuest ?? false;
 
     final pages = [
       // 0: Accounting Dashboard
@@ -397,11 +678,35 @@ class _HomePageState extends State<HomePage> {
       // 10: Barcodes
       const BarcodesPage(),
       // 11: Users
-      const UsersPage(),
+      isGuest
+          ? GuestRestrictedView(
+              title: isArabic ? 'إدارة المستخدمين' : 'User Management',
+              description: isArabic
+                  ? 'إدارة فريق العمل والأدوار والصلاحيات تتطلب تسجيل الدخول بحساب مسؤول معتمد.'
+                  : 'Managing team members, roles, and permissions requires signing in with an authorized administrator account.',
+              onBackToDashboard: () => setState(() => selectedIndex = 0),
+            )
+          : const UsersPage(),
       // 12: Profile
-      const ProfilePage(),
+      isGuest
+          ? GuestRestrictedView(
+              title: isArabic ? 'الملف الشخصي' : 'User Profile',
+              description: isArabic
+                  ? 'الملف الشخصي متاح للمستخدمين المسجلين فقط. سجل الدخول للوصول إلى بياناتك الشخصية.'
+                  : 'User profiles are only available for authenticated accounts. Sign in to view and edit your profile.',
+              onBackToDashboard: () => setState(() => selectedIndex = 0),
+            )
+          : const ProfilePage(),
       // 13: Restaurant Info
-      const RestaurantInfoPage(),
+      isGuest
+          ? GuestRestrictedView(
+              title: isArabic ? 'بيانات المطعم' : 'Restaurant Profile',
+              description: isArabic
+                  ? 'تعديل السجل التجاري والبيانات الضريبية للمنشأة يتطلب تسجيل الدخول بحساب مسؤول معتمد.'
+                  : 'Modifying commercial registration and enterprise settings requires signing in with an authorized account.',
+              onBackToDashboard: () => setState(() => selectedIndex = 0),
+            )
+          : const RestaurantInfoPage(),
     ];
 
     SessionState? sessionState;
@@ -473,7 +778,10 @@ class _HomePageState extends State<HomePage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 2,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -496,7 +804,6 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 6),
                           Text(
                             _packageInfo != null
                                 ? 'v${_packageInfo!.version}'
@@ -737,19 +1044,60 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.storefront_outlined,
                     label: isArabic ? "بيانات المطعم" : "Restaurant Profile",
                     isSelected: selectedIndex == 13,
+                    trailing: isGuest
+                        ? Icon(
+                            Icons.lock_outline,
+                            size: 15,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.45),
+                          )
+                        : null,
                     onTap: () {
+                      if (isGuest) {
+                        _showGuestPromptDialog(
+                          context: context,
+                          title:
+                              isArabic ? "بيانات المطعم" : "Restaurant Profile",
+                          message: isArabic
+                              ? "تعديل بيانات المنشأة يتطلب تسجيل الدخول بحساب مسؤول معتمد."
+                              : "Managing restaurant profile requires signing in with an administrator account.",
+                        );
+                      }
                       setState(() => selectedIndex = 13);
                       if (isMobile) {
                         Navigator.of(context).pop();
                       }
                     },
                   ),
-                  if (canAccessUsers)
+                  if (canAccessUsers || isGuest)
                     SidebarItem(
                       icon: Icons.manage_accounts_outlined,
                       label: isArabic ? "إدارة المستخدمين" : "Users Management",
                       isSelected: selectedIndex == 11,
+                      trailing: isGuest
+                          ? Icon(
+                              Icons.lock_outline,
+                              size: 15,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.45),
+                            )
+                          : null,
                       onTap: () {
+                        if (isGuest) {
+                          _showGuestPromptDialog(
+                            context: context,
+                            title: isArabic
+                                ? "إدارة المستخدمين"
+                                : "Users Management",
+                            message: isArabic
+                                ? "إدارة المستخدمين والصلاحيات تتطلب تسجيل الدخول بحساب مسؤول."
+                                : "Managing users requires signing in with an administrator account.",
+                          );
+                        }
                         setState(() => selectedIndex = 11);
                         if (isMobile) {
                           Navigator.of(context).pop();
@@ -760,7 +1108,26 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.person_outline,
                     label: isArabic ? "ملفي الشخصي" : "Profile",
                     isSelected: selectedIndex == 12,
+                    trailing: isGuest
+                        ? Icon(
+                            Icons.lock_outline,
+                            size: 15,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.45),
+                          )
+                        : null,
                     onTap: () {
+                      if (isGuest) {
+                        _showGuestPromptDialog(
+                          context: context,
+                          title: isArabic ? "الملف الشخصي" : "Profile",
+                          message: isArabic
+                              ? "الملف الشخصي متاح للمستخدمين المسجلين فقط."
+                              : "User profile is only available for authenticated accounts.",
+                        );
+                      }
                       setState(() => selectedIndex = 12);
                       if (isMobile) {
                         Navigator.of(context).pop();
@@ -799,14 +1166,17 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                Text(
-                  isArabic ? 'بكرة © 2026' : 'Bokrah © 2026',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                Flexible(
+                  child: Text(
+                    isArabic ? 'بكرة © 2026' : 'Bokrah © 2026',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -866,9 +1236,11 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(width: 12),
 
           // Actions
-          Row(
-            children: [
-              // Language & Theme Pill
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                // Language & Theme Pill
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
                 decoration: BoxDecoration(
@@ -944,43 +1316,37 @@ class _HomePageState extends State<HomePage> {
               _buildUserMenu(),
               const SizedBox(width: 4),
 
+              // Special update button on top bar (shown only if a new update is available)
               BlocBuilder<AppUpdateCubit, AppUpdateState>(
                 builder: (context, updateState) {
-                  return Stack(
-                    children: [
-                      IconButton(
-                        icon:
-                            const Icon(Icons.notifications_outlined, size: 24),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const AppUpdateScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      if (updateState.hasUnskippedUpdate)
-                        Positioned(
-                          right: 6,
-                          top: 6,
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+                  if (!updateState.hasUnskippedUpdate) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildUpdateActionButton(
+                    context: context,
+                    isMobile: false,
+                    isArabic: isArabic,
+                  );
+                },
+              ),
+
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, size: 24),
+                tooltip: isArabic ? 'الإشعارات' : 'Notifications',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsPage(),
+                    ),
                   );
                 },
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
 
     return BlocListener<AppUpdateCubit, AppUpdateState>(
       listener: (context, state) {
@@ -1000,7 +1366,10 @@ class _HomePageState extends State<HomePage> {
         child: Scaffold(
           appBar: isMobile
               ? AppBar(
-                  title: Text(_pageTitle(selectedIndex, isArabic)),
+                  title: Text(
+                    _pageTitle(selectedIndex, isArabic),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   actions: [
                     IconButton(
                       tooltip: _themeTooltip(
@@ -1017,36 +1386,27 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     _buildUserMenu(isMobile: true),
+                    // Special update button on mobile app bar (shown only if a new update is available)
                     BlocBuilder<AppUpdateCubit, AppUpdateState>(
                       builder: (context, updateState) {
-                        return Stack(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined,
-                                  size: 22),
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AppUpdateScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (updateState.hasUnskippedUpdate)
-                              Positioned(
-                                right: 6,
-                                top: 6,
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        if (!updateState.hasUnskippedUpdate) {
+                          return const SizedBox.shrink();
+                        }
+                        return _buildUpdateActionButton(
+                          context: context,
+                          isMobile: true,
+                          isArabic: isArabic,
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined, size: 22),
+                      tooltip: isArabic ? 'الإشعارات' : 'Notifications',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationsPage(),
+                          ),
                         );
                       },
                     ),

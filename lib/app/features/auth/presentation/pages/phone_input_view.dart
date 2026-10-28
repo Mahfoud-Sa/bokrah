@@ -421,6 +421,84 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                           }
                         : null,
                   ),
+                  const SizedBox(height: 14),
+
+                  // OR Separator
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: theme.dividerColor.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          isArabic ? 'أو' : 'OR',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: theme.dividerColor.withValues(alpha: 0.15),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Continue as Guest Button
+                  OutlinedButton(
+                    key: const ValueKey('continue_as_guest_button'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      side: BorderSide(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(BkRadius.md),
+                      ),
+                      backgroundColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.04),
+                    ),
+                    onPressed: state.isSubmitting
+                        ? null
+                        : () {
+                            FocusScope.of(context).unfocus();
+                            cubit.continueAsGuest();
+                          },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 19,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            isArabic ? 'المتابعة كضيف' : 'Continue as Guest',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   const SizedBox(height: 20),
 
@@ -445,14 +523,16 @@ class _PhoneInputViewState extends State<PhoneInputView> {
                               color: theme.colorScheme.primary,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              isArabic
-                                  ? 'حسابات تجريبية سريعة:'
-                                  : 'Quick Demo Accounts:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
+                            Expanded(
+                              child: Text(
+                                isArabic
+                                    ? 'حسابات تجريبية سريعة:'
+                                    : 'Quick Demo Accounts:',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
                             ),
                           ],

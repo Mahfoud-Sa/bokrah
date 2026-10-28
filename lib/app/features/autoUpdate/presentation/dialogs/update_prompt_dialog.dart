@@ -38,9 +38,15 @@ class UpdatePromptDialog extends StatelessWidget {
         children: [
           const Icon(Icons.system_update, color: Colors.blueAccent),
           const SizedBox(width: 8),
-          const Text('New Version Available'),
+          const Flexible(
+            child: Text(
+              'New Version Available',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
+      actionsOverflowDirection: VerticalDirection.down,
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

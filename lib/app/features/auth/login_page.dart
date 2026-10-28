@@ -18,6 +18,15 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AuthCubit? existingCubit;
+    try {
+      existingCubit = context.read<AuthCubit>();
+    } catch (_) {}
+
+    if (authService == null && existingCubit != null) {
+      return const _LoginPageContent();
+    }
+
     return FutureBuilder<AuthService>(
       future: _resolveAuthService(),
       builder: (context, snapshot) {
@@ -54,17 +63,37 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-class _LoginPageContent extends StatelessWidget {
+class _LoginPageContent extends StatefulWidget {
   const _LoginPageContent();
+
+  @override
+  State<_LoginPageContent> createState() => _LoginPageContentState();
+}
+
+class _LoginPageContentState extends State<_LoginPageContent> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        final authState = context.read<AuthCubit>().state;
+        if (authState.status == AuthStatus.authenticated) {
+          context.go('/home');
+        }
+      } catch (_) {}
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
           previous.status != current.status &&
-          current.status == AuthStatus.authenticated,
+          (current.status == AuthStatus.authenticated ||
+              current.status == AuthStatus.guest),
       listener: (context, state) {
-        // Navigate to the home screen after successful authentication
+        // Navigate to the home screen after successful authentication or guest selection
         try {
           context.go('/home');
         } catch (_) {
@@ -105,7 +134,7 @@ class _LoginPageContent extends StatelessWidget {
                     : const KeyedSubtree(
                         key: ValueKey('otp_verification_view'),
                         child: OtpVerificationView(),
-                      )
+                      ),
               );
             },
           ),

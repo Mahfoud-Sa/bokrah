@@ -14,12 +14,12 @@ import 'package:go_router/go_router.dart';
 
 class AppRoutes {
   static final GoRouter routers = GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/login',
     routes: <RouteBase>[
       GoRoute(
         path: '/',
         builder: (context, state) {
-          return const HomePage();
+          return const LoginPage();
         },
         routes: <RouteBase>[
           GoRoute(

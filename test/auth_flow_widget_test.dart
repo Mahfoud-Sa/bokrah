@@ -150,5 +150,98 @@ void main() {
 
       expect(await authService.isAuthenticated(), isTrue);
     });
+
+    testWidgets('renders cleanly without overflow on narrow width in Arabic', (tester) async {
+      tester.view.physicalSize = const Size(292, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestApp(
+        authService: authService,
+        prefs: prefs,
+        locale: const Locale('ar'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('بكرة للمحاسبة'), findsOneWidget);
+    });
+
+    testWidgets('renders cleanly without overflow on ultra-narrow width (120px)', (tester) async {
+      tester.view.physicalSize = const Size(120, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestApp(
+        authService: authService,
+        prefs: prefs,
+        locale: const Locale('ar'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('displays Continue as Guest button in English and Arabic', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      // English
+      await tester.pumpWidget(createTestApp(
+        authService: authService,
+        prefs: prefs,
+        locale: const Locale('en'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('continue_as_guest_button')), findsOneWidget);
+      expect(find.text('Continue as Guest'), findsOneWidget);
+
+      // Arabic
+      await tester.pumpWidget(createTestApp(
+        authService: authService,
+        prefs: prefs,
+        locale: const Locale('ar'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('continue_as_guest_button')), findsOneWidget);
+      expect(find.text('المتابعة كضيف'), findsOneWidget);
+    });
+
+    testWidgets('tapping Continue as Guest enters guest mode', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestApp(
+        authService: authService,
+        prefs: prefs,
+        locale: const Locale('en'),
+      ));
+      await tester.pumpAndSettle();
+
+      final guestButton = find.byKey(const ValueKey('continue_as_guest_button'));
+      expect(guestButton, findsOneWidget);
+
+      await tester.tap(guestButton);
+      await tester.pumpAndSettle();
+
+      // Ensure no exceptions occurred during guest transition
+      expect(tester.takeException(), isNull);
+    });
   });
 }

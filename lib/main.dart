@@ -11,7 +11,7 @@ import 'package:bokrah/app/features/users/presentation/cubits/session_cubit.dart
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bokrah_design_system/bokrah_design_system.dart';
-
+import 'package:bokrah/app/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:bokrah/app/features/restaurant/presentation/cubits/restaurant_cubit.dart';
 
 Future<void> main() async {
@@ -29,12 +29,9 @@ Future<void> main() async {
             localDataSource: SettingsLocalDataSource(sharedPreferences: prefs),
           ),
         ),
-        BlocProvider(
-          create: (context) => singelton<AppUpdateCubit>(),
-        ),
-        BlocProvider(
-          create: (context) => singelton<SessionCubit>(),
-        ),
+        BlocProvider(create: (context) => singelton<AuthCubit>()),
+        BlocProvider(create: (context) => singelton<AppUpdateCubit>()),
+        BlocProvider(create: (context) => singelton<SessionCubit>()),
         BlocProvider(
           create: (context) => singelton<RestaurantCubit>()..loadRestaurant(),
         ),
@@ -43,7 +40,6 @@ Future<void> main() async {
     ),
   );
 }
-
 
 class MyApp extends StatelessWidget {
   final PackageInfo packageInfo;

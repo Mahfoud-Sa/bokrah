@@ -3,7 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bokrah/app/features/autoUpdate/domain/entities/app_release.dart';
 import 'package:bokrah/app/features/autoUpdate/domain/repositories/app_update_repository.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/app_update_screen.dart';
 import 'package:bokrah/app/features/autoUpdate/presentation/cubits/app_update_cubit.dart';
+import 'package:bokrah/app/features/autoUpdate/presentation/dialogs/update_prompt_dialog.dart';
+import 'package:bokrah/app/features/home/notification_page.dart';
 import 'package:bokrah/app/config/l10n/app_localizations.dart';
 import 'package:bokrah/app/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:bokrah/app/features/settings/presentation/cubits/settings_cubit.dart';
@@ -71,14 +74,22 @@ void main() {
     );
   }
 
-  group('HomePage Notification Badge Tests', () {
-    testWidgets('notification badge is hidden when no update is available', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
+  group('HomePage Update and Notification Tests', () {
+    testWidgets('update button is hidden when no update is available', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       await tester.pumpWidget(buildTestWidget());
       await tester.pump();
 
-      // Look for the red badge Container decoration
+      final updateIconFinder = find.byIcon(Icons.system_update_alt_rounded);
+      expect(updateIconFinder, findsNothing);
+
+      // Red badge is also not found
       final redBadgeFinder = find.byWidgetPredicate((widget) {
         if (widget is Container && widget.decoration is BoxDecoration) {
           final decoration = widget.decoration as BoxDecoration;
@@ -90,8 +101,34 @@ void main() {
       expect(redBadgeFinder, findsNothing);
     });
 
-    testWidgets('notification badge appears when an unskipped update is available', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
+    testWidgets('tapping notification icon opens NotificationsPage and not AppUpdateScreen', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      final notifIconFinder = find.byIcon(Icons.notifications_outlined);
+      expect(notifIconFinder, findsOneWidget);
+
+      await tester.tap(notifIconFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationsPage), findsOneWidget);
+      expect(find.byType(AppUpdateScreen), findsNothing);
+    });
+
+    testWidgets('special update button appears on desktop topBar when an unskipped update is available and opens AppUpdateScreen', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       repository.latestRelease = const AppRelease(
         version: '3.4.0',
@@ -104,6 +141,16 @@ void main() {
       await tester.pumpWidget(buildTestWidget());
       await tester.pumpAndSettle();
 
+      // Dismiss the automatic session prompt dialog first if shown
+      if (find.byType(UpdatePromptDialog).evaluate().isNotEmpty) {
+        final navigator = Navigator.of(tester.element(find.byType(UpdatePromptDialog)));
+        navigator.pop();
+        await tester.pumpAndSettle();
+      }
+
+      final updateIconFinder = find.byIcon(Icons.system_update_alt_rounded);
+      expect(updateIconFinder, findsOneWidget);
+
       final redBadgeFinder = find.byWidgetPredicate((widget) {
         if (widget is Container && widget.decoration is BoxDecoration) {
           final decoration = widget.decoration as BoxDecoration;
@@ -111,8 +158,47 @@ void main() {
         }
         return false;
       });
-
       expect(redBadgeFinder, findsWidgets);
+
+      await tester.tap(updateIconFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppUpdateScreen), findsOneWidget);
+    });
+
+    testWidgets('special update button appears on mobile AppBar when update is available and opens AppUpdateScreen', (tester) async {
+      tester.view.physicalSize = const Size(500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      repository.latestRelease = const AppRelease(
+        version: '3.4.0',
+        tagName: 'v3.4.0',
+        name: 'Release 3.4.0',
+        body: 'New version',
+      );
+      repository.isAvailable = true;
+
+      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpAndSettle();
+
+      // Dismiss the automatic session prompt dialog first if shown
+      if (find.byType(UpdatePromptDialog).evaluate().isNotEmpty) {
+        final navigator = Navigator.of(tester.element(find.byType(UpdatePromptDialog)));
+        navigator.pop();
+        await tester.pumpAndSettle();
+      }
+
+      final updateIconFinder = find.byIcon(Icons.system_update_alt_rounded);
+      expect(updateIconFinder, findsOneWidget);
+
+      await tester.tap(updateIconFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppUpdateScreen), findsOneWidget);
     });
   });
 }

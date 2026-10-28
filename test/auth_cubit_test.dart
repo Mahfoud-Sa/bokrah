@@ -139,4 +139,51 @@ void main() {
       expect(cubit.state.rawPhoneNumber, equals('501234567'));
     });
   });
+
+  group('AuthCubit Guest User & Session Management Tests', () {
+    test('continueAsGuest transitions status to guest and sets isGuest to true', () {
+      expect(cubit.state.isGuest, isFalse);
+      cubit.continueAsGuest();
+
+      expect(cubit.state.status, equals(AuthStatus.guest));
+      expect(cubit.state.isGuest, isTrue);
+      expect(cubit.state.isAuthenticated, isFalse);
+    });
+
+    test('logout resets guest status to initial state', () async {
+      cubit.continueAsGuest();
+      expect(cubit.state.isGuest, isTrue);
+
+      await cubit.logout();
+      expect(cubit.state.status, equals(AuthStatus.idle));
+      expect(cubit.state.isGuest, isFalse);
+    });
+
+    test('logout revokes session and resets authenticated user to initial state', () async {
+      cubit.setEmail('chef@bokrah.com');
+      cubit.setPassword('secret123');
+      await cubit.submitLogin();
+      expect(cubit.state.isAuthenticated, isTrue);
+
+      await cubit.logout();
+      expect(cubit.state.status, equals(AuthStatus.idle));
+      expect(cubit.state.isAuthenticated, isFalse);
+      expect(await authService.isAuthenticated(), isFalse);
+    });
+
+    test('checkAuthStatus detects valid saved session', () async {
+      cubit.setEmail('chef@bokrah.com');
+      cubit.setPassword('secret123');
+      await cubit.submitLogin();
+
+      // Create a fresh cubit with same storage
+      final freshCubit = AuthCubit(authService: authService);
+      expect(freshCubit.state.isAuthenticated, isFalse);
+
+      await freshCubit.checkAuthStatus();
+      expect(freshCubit.state.status, equals(AuthStatus.authenticated));
+      expect(freshCubit.state.isAuthenticated, isTrue);
+      freshCubit.close();
+    });
+  });
 }
